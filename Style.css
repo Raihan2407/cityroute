@@ -1,0 +1,167 @@
+/* =============================================
+   CityRoute — Sketsa Peta Spasial Kota Virtual
+   style.css
+   ============================================= */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #f0ece4;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+}
+
+/* ---- App Container ---- */
+#app {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ---- Toolbar ---- */
+#toolbar {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 8px 14px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10);
+}
+
+/* ---- Buttons ---- */
+.btn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #f5f5f5;
+  color: #222;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.btn:hover {
+  background: #e8e8e8;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn.primary {
+  background: #1A3F6F;
+  color: #fff;
+  border-color: #1A3F6F;
+}
+
+.btn.primary:hover {
+  background: #2E75B6;
+  border-color: #2E75B6;
+}
+
+.btn.danger {
+  background: #D85A30;
+  color: #fff;
+  border-color: #D85A30;
+}
+
+.btn.danger:hover {
+  background: #c04828;
+  border-color: #c04828;
+}
+
+/* ---- Separator ---- */
+.sep {
+  width: 1px;
+  height: 22px;
+  background: #ddd;
+  flex-shrink: 0;
+}
+
+/* ---- Zoom Label ---- */
+#zoom-label {
+  font-size: 12px;
+  color: #666;
+  min-width: 42px;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* ---- Object Selector ---- */
+#obj-select {
+  font-size: 12px;
+  padding: 5px 8px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #f5f5f5;
+  cursor: pointer;
+  color: #222;
+}
+
+/* ---- Canvas ---- */
+canvas {
+  display: block;
+  cursor: grab;
+}
+
+canvas.grabbing {
+  cursor: grabbing;
+}
+
+/* ---- Info Bar ---- */
+#info {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  z-index: 10;
+  font-size: 11px;
+  color: #555;
+  background: rgba(255, 255, 255, 0.90);
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 6px 12px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* ---- Legend ---- */
+#legend {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  z-index: 10;
+  font-size: 11px;
+  color: #333;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 8px 12px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+  line-height: 1.8;
+}
+
+.leg-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.leg-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}

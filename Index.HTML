@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CityRoute — Sketsa Peta Spasial Kota Virtual</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div id="app">
+
+  <div id="toolbar">
+    <button class="btn primary" id="btn-rand">🗺 Acak Peta</button>
+    <button class="btn" id="btn-pos">📍 Acak Posisi</button>
+    <div class="sep"></div>
+    <button class="btn" id="btn-zi">＋ Zoom</button>
+    <span id="zoom-label">50%</span>
+    <button class="btn" id="btn-zo">－ Zoom</button>
+    <div class="sep"></div>
+    <select id="obj-select">
+      <option value="car">🚗 Mobil</option>
+      <option value="moto">🏍 Motor</option>
+      <option value="bike">🚲 Sepeda</option>
+      <option value="ped">🚶 Pejalan Kaki</option>
+    </select>
+    <button class="btn primary" id="btn-start">▶ Start</button>
+    <button class="btn danger" id="btn-pause" style="display:none">⏸ Pause</button>
+  </div>
+
+  <canvas id="c"></canvas>
+
+  <div id="info">
+    Drag untuk scroll &nbsp;|&nbsp; Scroll wheel untuk zoom &nbsp;|&nbsp; Pinch gesture (mobile)
+  </div>
+
+  <div id="legend">
+    <div class="leg-row"><div class="leg-dot" style="background:#1D9E75"></div> Titik Awal</div>
+    <div class="leg-row"><div class="leg-dot" style="background:#D85A30"></div> Titik Tujuan</div>
+    <div class="leg-row"><div class="leg-dot" style="background:#BA7517;border-radius:2px"></div> Jalur Terpendek</div>
+    <div class="leg-row"><div class="leg-dot" style="background:#378ADD"></div> Objek Bergerak</div>
+    <div class="leg-row"><div class="leg-dot" style="background:#9a8f80;border-radius:2px"></div> Bangunan</div>
+    <div class="leg-row"><div class="leg-dot" style="background:#b8d4a8;border-radius:2px"></div> Taman</div>
+    <div class="leg-row"><div class="leg-dot" style="background:#a8c4d4;border-radius:2px"></div> Perairan</div>
+  </div>
+
+</div>
+<script src="app.js"></script>
+</body>
+</html>
