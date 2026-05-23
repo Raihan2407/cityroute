@@ -1,84 +1,131 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CityRoute — Peta Spasial Kota Virtual</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-<div id="app">
-
-  <div id="toolbar">
-    <div class="toolbar-brand">
-      <span class="brand-icon">🗺</span>
-      <span class="brand-name">CityRoute</span>
-    </div>
-    <div class="toolbar-divider"></div>
-    <div class="toolbar-group">
-      <button class="btn btn-primary" id="btn-rand">🔀 Acak Peta</button>
-      <button class="btn btn-secondary" id="btn-pos">📍 Acak Posisi</button>
-    </div>
-    <div class="toolbar-divider"></div>
-    <div class="toolbar-group zoom-group">
-      <button class="btn btn-icon-only" id="btn-zo" title="Zoom Out">−</button>
-      <span id="zoom-label">50%</span>
-      <button class="btn btn-icon-only" id="btn-zi" title="Zoom In">+</button>
-    </div>
-    <div class="toolbar-divider"></div>
-    <div class="toolbar-group">
-      <div class="select-wrap">
-        <select id="obj-select">
-          <option value="car">🚗 Mobil</option>
-          <option value="moto">🏍 Motor</option>
-          <option value="bike">🚲 Sepeda</option>
-          <option value="ped">🚶 Pejalan Kaki</option>
-        </select>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CityRoute — Peta Spasial Kota Virtual</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- TOOLBAR -->
+      <div id="toolbar">
+        <div class="tb-brand">
+          <div class="tb-mark">🗺</div>
+          <span class="tb-name">CityRoute</span>
+        </div>
+        <div class="tb-sep"></div>
+        <div class="tb-grp">
+          <button class="btn btn-dark" id="btn-rand">🔀 Acak Peta</button>
+          <button class="btn btn-flat" id="btn-pos">📍 Acak Posisi</button>
+        </div>
+        <div class="tb-sep"></div>
+        <div class="tb-grp tb-zoom">
+          <button class="btn btn-icon" id="btn-zo">−</button>
+          <span id="zoom-label">50%</span>
+          <button class="btn btn-icon" id="btn-zi">+</button>
+        </div>
+        <div class="tb-sep"></div>
+        <div class="tb-grp">
+          <div class="sel-wrap">
+            <select id="obj-select">
+              <option value="car">🚗 Mobil</option>
+              <option value="moto">🏍 Motor</option>
+              <option value="bike">🚲 Sepeda</option>
+              <option value="ped">🚶 Pejalan Kaki</option>
+            </select>
+          </div>
+          <button class="btn btn-green" id="btn-start">▶ Start</button>
+          <button class="btn btn-orange" id="btn-pause" style="display: none">
+            ⏸ Pause
+          </button>
+        </div>
+        <div class="tb-sep"></div>
+        <div class="tb-grp">
+          <button class="btn btn-3d" id="btn-3d">🧊 Mode 3D</button>
+        </div>
       </div>
-      <button class="btn btn-start" id="btn-start">▶ Start</button>
-      <button class="btn btn-pause" id="btn-pause" style="display:none">⏸ Pause</button>
+
+      <!-- CANVAS -->
+      <canvas id="c"></canvas>
+
+      <!-- STATUS PILL -->
+      <div id="status-pill">
+        <div class="status-dot"></div>
+        <span id="status-text">Siap</span>
+      </div>
+
+      <!-- INFO BAR -->
+      <div id="info">Drag untuk geser &nbsp;·&nbsp; Scroll untuk zoom</div>
+      <div id="info3d" style="display: none">
+        Drag = Orbit &nbsp;·&nbsp; Alt+Drag = Pan &nbsp;·&nbsp; Scroll = Zoom
+      </div>
+
+      <!-- LEGEND -->
+      <div id="legend">
+        <div class="panel-title">Keterangan</div>
+        <div class="leg-row">
+          <div class="leg-dot" style="background: #16a34a"></div>
+          <span>Titik Awal</span>
+        </div>
+        <div class="leg-row">
+          <div class="leg-dot" style="background: #dc2626"></div>
+          <span>Titik Tujuan</span>
+        </div>
+        <div class="leg-row">
+          <div class="leg-line" style="background: #2563eb"></div>
+          <span>Jalur A*</span>
+        </div>
+        <div class="leg-row">
+          <div class="leg-dot" style="background: #2563eb"></div>
+          <span>Kendaraan</span>
+        </div>
+        <div class="leg-row">
+          <div
+            class="leg-dot"
+            style="
+              background: #dce8d4;
+              border: 1px solid #c4d8b8;
+              border-radius: 2px;
+            "
+          ></div>
+          <span>Taman</span>
+        </div>
+        <div class="leg-row">
+          <div
+            class="leg-dot"
+            style="
+              background: #d4e8f4;
+              border: 1px solid #bcd8ec;
+              border-radius: 2px;
+            "
+          ></div>
+          <span>Perairan</span>
+        </div>
+        <div class="leg-row">
+          <div
+            class="leg-dot"
+            style="background: #fff; border: 1.5px solid #c4c0b8"
+          ></div>
+          <span>Bundaran</span>
+        </div>
+      </div>
+
+      <!-- ALGO BADGE -->
+      <div id="algo-badge">
+        <div class="panel-title">Algoritma Grafika</div>
+        <div class="algo-tags">
+          <span class="tag">Bresenham Line</span>
+          <span class="tag">A* Pathfinding</span>
+          <span class="tag">Bezier Curve</span>
+          <span class="tag">Midpoint Circle</span>
+          <span class="tag">Dashed Curve</span>
+          <span class="tag tag-3d">MVP Matrix 3D</span>
+          <span class="tag tag-3d">Orbit Camera</span>
+          <span class="tag tag-3d">Painter's Algo</span>
+        </div>
+      </div>
     </div>
-    <div class="toolbar-divider"></div>
-    <div class="toolbar-group">
-      <button class="btn btn-3d" id="btn-3d">🧊 3D</button>
-    </div>
-  </div>
-
-  <canvas id="c"></canvas>
-
-  <div id="info" class="info-2d">✋ Drag &nbsp;·&nbsp; 🔍 Scroll Zoom</div>
-  <div id="info3d" class="info-3d" style="display:none">
-    🖱 Drag = Orbit &nbsp;·&nbsp; Alt+Drag = Pan &nbsp;·&nbsp; Scroll = Zoom
-  </div>
-
-  <div id="legend">
-    <div class="legend-title">Keterangan</div>
-    <div class="leg-row"><div class="leg-dot" style="background:#22cc44"></div><span>Titik Awal</span></div>
-    <div class="leg-row"><div class="leg-dot" style="background:#ee2222"></div><span>Titik Tujuan</span></div>
-    <div class="leg-row"><div class="leg-dot" style="background:#4a90e2;border-radius:3px;width:18px;height:6px"></div><span>Jalur A*</span></div>
-    <div class="leg-row"><div class="leg-dot" style="background:#3366ee"></div><span>Kendaraan</span></div>
-    <div class="leg-row"><div class="leg-dot" style="background:#c0b8a8;border-radius:3px"></div><span>Bangunan</span></div>
-    <div class="leg-row"><div class="leg-dot" style="background:#98c888;border-radius:3px"></div><span>Taman</span></div>
-    <div class="leg-row"><div class="leg-dot" style="background:#90b8d8;border-radius:3px"></div><span>Perairan</span></div>
-    <div class="leg-row"><div class="leg-dot" style="background:#d4d8d4;border-radius:50%;border:2px solid #a8b0a8"></div><span>Bundaran</span></div>
-  </div>
-
-  <div id="algo-badge">
-    <div class="algo-title">Algoritma Grafika</div>
-    <div class="algo-tags">
-      <span class="tag">Bresenham Line</span>
-      <span class="tag">A* Pathfinding</span>
-      <span class="tag">Bezier Curve</span>
-      <span class="tag">Midpoint Circle</span>
-      <span class="tag">Dashed Curve</span>
-      <span class="tag tag-3d">MVP Matrix 3D</span>
-      <span class="tag tag-3d">Orbit Camera</span>
-      <span class="tag tag-3d">Extrusion 3D</span>
-      <span class="tag tag-3d">Painter's Algo</span>
-    </div>
-  </div>
-
-</div>
-<script src="app.js"></script>
-</body>
+    <script src="app.js"></script>
+  </body>
 </html>
