@@ -372,55 +372,66 @@ function extrudeBuilding3D(b, col) {
   const [topC, frontC, rightC] =
     pals[Math.abs(Math.round(bx * 0.01 + by * 0.013)) % 4];
 
-  // Right face: C[1]-C[2]
-  const rf = [C[1], C[2]].map((c) => proj2D(c.x, c.y));
-  const rfh = [C[1], C[2]].map((c) => projH(c.x, c.y, height));
-  if (rf.some((p) => p.visible) || rfh.some((p) => p.visible)) {
-    ctx.beginPath();
-    ctx.moveTo(rf[0].x, rf[0].y);
-    ctx.lineTo(rf[1].x, rf[1].y);
-    ctx.lineTo(rfh[1].x, rfh[1].y);
-    ctx.lineTo(rfh[0].x, rfh[0].y);
-    ctx.closePath();
-    ctx.fillStyle = rightC;
-    ctx.fill();
-    ctx.strokeStyle = "rgba(0,0,0,0.12)";
-    ctx.lineWidth = 0.5;
-    ctx.stroke();
-  }
+  // Gambar 4 sisi bangunan dengan back-face culling
+  // Back-face culling: cross product Z dari winding order di screen space
+  // Jika cross product < 0 = face menghadap kamera (counter-clockwise = visible)
+  const sidesDef = [
+    { i0: 0, i1: 1, color: frontC },
+    { i0: 1, i1: 2, color: rightC },
+    { i0: 2, i1: 3, color: frontC },
+    { i0: 3, i1: 0, color: rightC },
+  ];
 
-  // Front face: C[2]-C[3]
-  const ff = [C[2], C[3]].map((c) => proj2D(c.x, c.y));
-  const ffh = [C[2], C[3]].map((c) => projH(c.x, c.y, height));
-  if (ff.some((p) => p.visible) || ffh.some((p) => p.visible)) {
+  for (const sd of sidesDef) {
+    const p0 = proj2D(C[sd.i0].x, C[sd.i0].y);
+    const p1 = proj2D(C[sd.i1].x, C[sd.i1].y);
+    const p0t = projH(C[sd.i0].x, C[sd.i0].y, height);
+    const p1t = projH(C[sd.i1].x, C[sd.i1].y, height);
+    if (!p0.visible && !p1.visible && !p0t.visible && !p1t.visible) continue;
+
+    // Winding check: cross product (p1-p0) x (p0t-p0)
+    const ex = p1.x - p0.x,
+      ey = p1.y - p0.y;
+    const fx = p0t.x - p0.x,
+      fy = p0t.y - p0.y;
+    if (ex * fy - ey * fx > 0) continue; // back face, skip
+
     ctx.beginPath();
-    ctx.moveTo(ff[0].x, ff[0].y);
-    ctx.lineTo(ff[1].x, ff[1].y);
-    ctx.lineTo(ffh[1].x, ffh[1].y);
-    ctx.lineTo(ffh[0].x, ffh[0].y);
+    ctx.moveTo(p0.x, p0.y);
+    ctx.lineTo(p1.x, p1.y);
+    ctx.lineTo(p1t.x, p1t.y);
+    ctx.lineTo(p0t.x, p0t.y);
     ctx.closePath();
-    ctx.fillStyle = frontC;
+    ctx.fillStyle = sd.color;
     ctx.fill();
     ctx.strokeStyle = "rgba(0,0,0,0.12)";
     ctx.lineWidth = 0.5;
     ctx.stroke();
-    // Jendela
-    const rows = Math.min(b.floors || 1, 5);
-    const cols = Math.max(1, Math.round(Math.abs(ffh[0].x - ffh[1].x) / 14));
-    for (let wr = 0; wr < rows; wr++) {
-      for (let wc = 0; wc < cols; wc++) {
-        const wx = ffh[1].x + ((wc + 0.5) * (ffh[0].x - ffh[1].x)) / cols;
-        const wy =
-          ffh[1].y + (0.15 + (wr * 0.75) / rows) * (ff[1].y - ffh[1].y);
-        const ws = Math.max(2, (Math.abs(ffh[0].x - ffh[1].x) / cols) * 0.45);
-        ctx.fillStyle =
-          (wr * 7 + wc * 13) % 5 !== 0
-            ? "rgba(180,220,255,0.85)"
-            : "rgba(0,0,0,0.3)";
-        ctx.fillRect(wx - ws / 2, wy - ws * 0.7, ws, ws * 1.4);
+
+    // Jendela di sisi yang visible
+    const winW = Math.abs(p1t.x - p0t.x);
+    const winH = Math.abs(p0.y - p0t.y);
+    if (winW > 10 && winH > 10) {
+      const wCols = Math.max(1, Math.round(winW / 14));
+      const wRows = Math.min(b.floors || 1, 5);
+      for (let wr = 0; wr < wRows; wr++) {
+        for (let wc = 0; wc < wCols; wc++) {
+          const wx = p0t.x + ((wc + 0.5) * (p1t.x - p0t.x)) / wCols;
+          const wy = p0t.y + (0.15 + (wr * 0.75) / wRows) * (p0.y - p0t.y);
+          const ws = Math.max(2, (winW / wCols) * 0.4);
+          ctx.fillStyle =
+            (wr * 7 + wc * 13) % 5 !== 0
+              ? "rgba(180,220,255,0.85)"
+              : "rgba(0,0,0,0.3)";
+          ctx.fillRect(wx - ws / 2, wy - ws * 0.7, ws, ws * 1.4);
+        }
       }
     }
   }
+
+  // dummy vars agar tidak error referensi lama
+  const ff = [];
+  const ffh = [];
 
   // Top face (atap)
   const top = C.map((c) => projH(c.x, c.y, height));
@@ -441,19 +452,26 @@ function extrudeBuilding3D(b, col) {
 function drawFlag3D(wx, wy, color) {
   const base = proj2D(wx, wy);
   const top = projH(wx, wy, 120);
-  const tip = projH(wx + 60, wy, 80);
-  const bot = projH(wx + 60, wy, 50);
-  if (!base.visible) return;
+  if (!base.visible || !top.visible) return;
+
+  // Tiang
   ctx.beginPath();
   ctx.moveTo(base.x, base.y);
   ctx.lineTo(top.x, top.y);
   ctx.strokeStyle = "#888";
-  ctx.lineWidth = 1.5;
+  ctx.lineWidth = 2;
   ctx.stroke();
+
+  // Arah bendera: proyeksikan titik di world +X dari tiang
+  // Ambil arah kanan relatif kamera dari theta orbit
+  const rightX = projH(wx + 80, wy, 90);
+  const botPt = projH(wx + 80, wy, 60);
+  if (!rightX.visible) return;
+
   ctx.beginPath();
   ctx.moveTo(top.x, top.y);
-  ctx.lineTo(tip.x, tip.y);
-  ctx.lineTo(bot.x, bot.y);
+  ctx.lineTo(rightX.x, rightX.y);
+  ctx.lineTo(botPt.x, botPt.y);
   ctx.closePath();
   ctx.fillStyle = color;
   ctx.fill();
@@ -463,16 +481,17 @@ function drawFlag3D(wx, wy, color) {
 function drawMovingObj3D(obj, col) {
   const base = proj2D(obj.x, obj.y);
   if (!base.visible) return;
+  // Ukuran kendaraan lebih besar agar terlihat di mode 3D
   const bodyH =
     obj.type === "car"
-      ? 28
+      ? 50
       : obj.type === "moto"
-        ? 20
+        ? 40
         : obj.type === "bike"
-          ? 15
-          : 35;
-  const hl = obj.type === "ped" ? 8 : obj.type === "bike" ? 10 : 15;
-  const hw = obj.type === "ped" ? 8 : obj.type === "bike" ? 6 : 10;
+          ? 30
+          : 60;
+  const hl = obj.type === "ped" ? 18 : obj.type === "bike" ? 22 : 35;
+  const hw = obj.type === "ped" ? 18 : obj.type === "bike" ? 14 : 22;
   const cc = [col.objCar, col.objCar2, col.objCar3, col.objCar4][
     (obj.colorIdx || 0) % 4
   ];
@@ -489,25 +508,34 @@ function drawMovingObj3D(obj, col) {
   const bot = C3.map((c) => proj2D(c[0], c[1]));
   const top = C3.map((c) => projH(c[0], c[1], bodyH));
   if (!top.some((p) => p.visible)) return;
-  // Front
-  ctx.beginPath();
-  ctx.moveTo(bot[0].x, bot[0].y);
-  ctx.lineTo(bot[1].x, bot[1].y);
-  ctx.lineTo(top[1].x, top[1].y);
-  ctx.lineTo(top[0].x, top[0].y);
-  ctx.closePath();
-  ctx.fillStyle = cc;
-  ctx.fill();
-  // Side
-  ctx.beginPath();
-  ctx.moveTo(bot[1].x, bot[1].y);
-  ctx.lineTo(bot[2].x, bot[2].y);
-  ctx.lineTo(top[2].x, top[2].y);
-  ctx.lineTo(top[1].x, top[1].y);
-  ctx.closePath();
-  ctx.fillStyle = shadeColor(cc, -30);
-  ctx.fill();
-  // Roof
+  const vehSides = [
+    { i0: 0, i1: 1, shade: 0 },
+    { i0: 1, i1: 2, shade: -30 },
+    { i0: 2, i1: 3, shade: -15 },
+    { i0: 3, i1: 0, shade: -20 },
+  ];
+  for (const vs of vehSides) {
+    const p0 = bot[vs.i0],
+      p1 = bot[vs.i1],
+      p0t = top[vs.i0],
+      p1t = top[vs.i1];
+    const ex = p1.x - p0.x,
+      ey = p1.y - p0.y,
+      fx = p0t.x - p0.x,
+      fy = p0t.y - p0.y;
+    if (ex * fy - ey * fx > 0) continue;
+    ctx.beginPath();
+    ctx.moveTo(p0.x, p0.y);
+    ctx.lineTo(p1.x, p1.y);
+    ctx.lineTo(p1t.x, p1t.y);
+    ctx.lineTo(p0t.x, p0t.y);
+    ctx.closePath();
+    ctx.fillStyle = vs.shade === 0 ? cc : shadeColor(cc, vs.shade);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(0,0,0,0.15)";
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+  }
   ctx.beginPath();
   top.forEach((p, i) =>
     i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y),
@@ -515,17 +543,22 @@ function drawMovingObj3D(obj, col) {
   ctx.closePath();
   ctx.fillStyle = shadeColor(cc, 20);
   ctx.fill();
-  // Kaca depan (car only)
   if (obj.type === "car") {
-    const wf = C3.map((c) => projH(c[0], c[1], bodyH * 0.5));
-    ctx.beginPath();
-    ctx.moveTo(wf[0].x, wf[0].y);
-    ctx.lineTo(wf[1].x, wf[1].y);
-    ctx.lineTo(top[1].x, top[1].y);
-    ctx.lineTo(top[0].x, top[0].y);
-    ctx.closePath();
-    ctx.fillStyle = "rgba(180,225,255,0.75)";
-    ctx.fill();
+    const ex0 = bot[1].x - bot[0].x,
+      ey0 = bot[1].y - bot[0].y;
+    const fx0 = top[0].x - bot[0].x,
+      fy0 = top[0].y - bot[0].y;
+    if (ex0 * fy0 - ey0 * fx0 <= 0) {
+      const wf = C3.map((c) => projH(c[0], c[1], bodyH * 0.5));
+      ctx.beginPath();
+      ctx.moveTo(wf[0].x, wf[0].y);
+      ctx.lineTo(wf[1].x, wf[1].y);
+      ctx.lineTo(top[1].x, top[1].y);
+      ctx.lineTo(top[0].x, top[0].y);
+      ctx.closePath();
+      ctx.fillStyle = "rgba(180,225,255,0.75)";
+      ctx.fill();
+    }
   }
 }
 
@@ -646,22 +679,22 @@ function drawMap3D() {
           ctx.strokeStyle = "#8a7a60";
           ctx.lineWidth = 2;
           ctx.stroke();
-          // Mahkota
-          const cr = Math.max(5, 10);
-          ctx.beginPath();
-          ctx.arc(tTop.x, tTop.y, cr, 0, Math.PI * 2);
-          ctx.fillStyle = col.parkTree;
-          ctx.fill();
-          ctx.beginPath();
-          ctx.arc(
-            tTop.x - cr * 0.2,
-            tTop.y - cr * 0.2,
-            cr * 0.6,
-            0,
-            Math.PI * 2,
+          // Mahkota ukuran proporsional depth
+          const cr = Math.max(4, Math.min(20, tTop.w * 0.008));
+          midpointCircleCtx(
+            Math.round(tTop.x),
+            Math.round(tTop.y),
+            Math.max(1, Math.round(cr)),
+            col.parkTree,
+            null,
           );
-          ctx.fillStyle = col.parkGround;
-          ctx.fill();
+          midpointCircleCtx(
+            Math.round(tTop.x - cr * 0.25),
+            Math.round(tTop.y - cr * 0.25),
+            Math.max(1, Math.round(cr * 0.55)),
+            col.parkGround,
+            null,
+          );
         }
       }
     } else if (b.type === "water") {
@@ -669,11 +702,13 @@ function drawMap3D() {
       // Riak air
       const wc = proj2D(b.x + b.w / 2, b.y + b.h / 2);
       if (wc.visible) {
-        ctx.beginPath();
-        ctx.arc(wc.x, wc.y, Math.max(4, 8), 0, Math.PI * 2);
-        ctx.strokeStyle = col.waterRipple;
-        ctx.lineWidth = 1;
-        ctx.stroke();
+        midpointCircleCtx(
+          Math.round(wc.x),
+          Math.round(wc.y),
+          8,
+          null,
+          col.waterRipple,
+        );
       }
     }
   }
@@ -683,7 +718,7 @@ function drawMap3D() {
   buildings.sort((a, b) => {
     const da = proj2D(a.x + a.w / 2, a.y + a.h / 2).w;
     const db = proj2D(b.x + b.w / 2, b.y + b.h / 2).w;
-    return da - db; // terjauh dulu
+    return db - da; // .w besar=dekat, gambar terjauh (w kecil) dulu
   });
   for (const b of buildings) extrudeBuilding3D(b, col);
 
@@ -723,10 +758,13 @@ function drawMap3D() {
         ctx.strokeStyle = col.waterShine;
         ctx.lineWidth = 2;
         ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(fTop.x, fTop.y, 4, 0, Math.PI * 2);
-        ctx.fillStyle = col.waterShine;
-        ctx.fill();
+        midpointCircleCtx(
+          Math.round(fTop.x),
+          Math.round(fTop.y),
+          4,
+          col.waterShine,
+          null,
+        );
       }
     }
   }
@@ -960,13 +998,13 @@ function generateMap() {
       const i = r * cols + c;
       if (c < cols - 1) {
         const j = r * cols + c + 1;
-        edges.push({ a: i, b: j, curved: curveRng() < 0.35 });
+        edges.push({ a: i, b: j, curved: curveRng() < 0.9 });
         nodes[i].adj.push(j);
         nodes[j].adj.push(i);
       }
       if (r < rows - 1) {
         const j = (r + 1) * cols + c;
-        edges.push({ a: i, b: j, curved: curveRng() < 0.35 });
+        edges.push({ a: i, b: j, curved: curveRng() < 0.9 });
         nodes[i].adj.push(j);
         nodes[j].adj.push(i);
       }
@@ -1447,12 +1485,14 @@ function buildPathPts() {
         const exitY = cy + Math.sin(angleOut) * r;
 
         // Bezier A → entry bundaran
-        const cp1 = getEdgeControlPoint(A, { x: entryX, y: entryY }, i);
+        // Gunakan edge A→B asli sebagai referensi kurva
+        // agar jalur mengikuti lengkungan jalan yang sebenarnya
+        const cpAB = getEdgeControlPoint(A, B);
         for (let t = 0; t <= 1; t += 0.025) {
           const u = 1 - t;
           pathPts.push({
-            x: u * u * A.x + 2 * u * t * cp1.x + t * t * entryX,
-            y: u * u * A.y + 2 * u * t * cp1.y + t * t * entryY,
+            x: u * u * A.x + 2 * u * t * cpAB.x + t * t * entryX,
+            y: u * u * A.y + 2 * u * t * cpAB.y + t * t * entryY,
           });
         }
 
@@ -1472,12 +1512,13 @@ function buildPathPts() {
         }
 
         // Bezier exit bundaran → C
-        const cp2 = getEdgeControlPoint({ x: exitX, y: exitY }, C, i + 1);
+        // Gunakan edge B→C asli sebagai referensi kurva keluar
+        const cpBC = getEdgeControlPoint(B, C);
         for (let t = 0; t <= 1; t += 0.025) {
           const u = 1 - t;
           pathPts.push({
-            x: u * u * exitX + 2 * u * t * cp2.x + t * t * C.x,
-            y: u * u * exitY + 2 * u * t * cp2.y + t * t * C.y,
+            x: u * u * exitX + 2 * u * t * cpBC.x + t * t * C.x,
+            y: u * u * exitY + 2 * u * t * cpBC.y + t * t * C.y,
           });
         }
       }
@@ -1684,6 +1725,7 @@ function drawBuilding(b, col) {
 }
 
 function drawPark(b, col) {
+  const round = Math.round;
   const { x, y, w, h, treeCount, treeSeed } = b;
 
   // Area taman
@@ -1716,23 +1758,19 @@ function drawPark(b, col) {
     const ty = y + rng() * h * 0.8 + h * 0.1;
     const tr = Math.max(5, rng() * 12 + 6);
 
+    // Daun pohon (digambar dulu agar batang terlihat di depan)
+    midpointCircle(round(tx), round(ty), round(tr), col.parkTree, true);
+    midpointCircle(
+      round(tx - tr * 0.2),
+      round(ty - tr * 0.2),
+      Math.max(1, round(tr * 0.4)),
+      isDark() ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.2)",
+      true,
+    );
+
     // Batang pohon
     ctx.fillStyle = isDark() ? "#3a2a1a" : "#6a4a2a";
-    ctx.fillRect(tx - 1.5, ty, 3, tr * 0.6);
-
-    // Daun pohon (lingkaran)
-    ctx.fillStyle = col.parkTree;
-    ctx.beginPath();
-    ctx.arc(tx, ty, tr, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Highlight pohon (sisi terang)
-    ctx.fillStyle = isDark()
-      ? "rgba(255,255,255,0.06)"
-      : "rgba(255,255,255,0.2)";
-    ctx.beginPath();
-    ctx.arc(tx - tr * 0.2, ty - tr * 0.2, tr * 0.4, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fillRect(round(tx) - 1.5, round(ty), 3, tr * 0.8);
   }
 }
 
@@ -1851,6 +1889,71 @@ function midpointCircle(cx, cy, r, color, fill = true) {
   }
 }
 
+/**
+ * midpointCircleCtx(cx, cy, r, fill, stroke)
+ * Versi midpointCircle yang bekerja di koordinat ctx saat ini
+ * (termasuk dalam ctx.save/rotate transform).
+ * Menggunakan algoritma Midpoint Circle yang sama persis,
+ * namun output via ctx.beginPath/arc diganti fillRect per piksel.
+ * Dipakai untuk kendaraan dan elemen yang digambar dalam rotated context.
+ *
+ * Prinsip identik dengan midpointCircle():
+ *   p = 1 - r,  setiap langkah x++:
+ *   jika p < 0: p += 2x + 3  (y tetap)
+ *   jika p >= 0: y--, p += 2x - 2y + 5
+ *   Simetri 8 oktan untuk fill horizontal.
+ */
+function midpointCircleCtx(cx, cy, r, fillColor, strokeColor) {
+  r = Math.round(Math.abs(r));
+  if (r < 1) return;
+  let x = 0,
+    y = r,
+    p = 1 - r;
+  if (fillColor) {
+    ctx.fillStyle = fillColor;
+    while (x <= y) {
+      ctx.fillRect(cx - x, cy - y, 2 * x, 1);
+      ctx.fillRect(cx - x, cy + y, 2 * x, 1);
+      ctx.fillRect(cx - y, cy - x, 2 * y, 1);
+      ctx.fillRect(cx - y, cy + x, 2 * y, 1);
+      if (p < 0) {
+        p += 2 * x + 3;
+      } else {
+        y--;
+        p += 2 * x - 2 * y + 5;
+      }
+      x++;
+    }
+  }
+  if (strokeColor) {
+    x = 0;
+    y = r;
+    p = 1 - r;
+    ctx.fillStyle = strokeColor;
+    while (x <= y) {
+      for (const [px, py] of [
+        [cx + x, cy + y],
+        [cx - x, cy + y],
+        [cx + x, cy - y],
+        [cx - x, cy - y],
+        [cx + y, cy + x],
+        [cx - y, cy + x],
+        [cx + y, cy - x],
+        [cx - y, cy - x],
+      ]) {
+        ctx.fillRect(px, py, 1, 1);
+      }
+      if (p < 0) {
+        p += 2 * x + 3;
+      } else {
+        y--;
+        p += 2 * x - 2 * y + 5;
+      }
+      x++;
+    }
+  }
+}
+
 // ===================== DRAWING: SIDEWALK =====================
 /**
  * drawSidewalks()
@@ -1891,9 +1994,13 @@ function drawFlag(x, y, color) {
   ctx.lineTo(x, y - 20 * s);
   ctx.closePath();
   ctx.fill();
-  ctx.beginPath();
-  ctx.arc(x, y - 8 * s, 5 * s, 0, Math.PI * 2);
-  ctx.fill();
+  midpointCircleCtx(
+    Math.round(x),
+    Math.round(y - 8 * s),
+    Math.max(1, Math.round(5 * s)),
+    ctx.fillStyle,
+    null,
+  );
 }
 
 // ===================== DRAWING: MOVING OBJECT =====================
@@ -2004,10 +2111,7 @@ function drawMovingObj(obj) {
     else ctx.rect(-11 * s, -3 * s, 5 * s, 6 * s);
     ctx.fill();
     // Helm pengendara
-    ctx.fillStyle = "#eecc44";
-    ctx.beginPath();
-    ctx.arc(0, 0, 3.5 * s, 0, Math.PI * 2);
-    ctx.fill();
+    midpointCircleCtx(0, 0, Math.max(1, Math.round(3.5 * s)), "#eecc44", null);
   } else if (obj.type === "bike") {
     // Sepeda, hidung ke +X
     ctx.strokeStyle = col.objBike;
@@ -2019,22 +2123,27 @@ function drawMovingObj(obj) {
     ctx.lineTo(8 * s, 0);
     ctx.stroke();
     // Roda depan & belakang
-    ctx.beginPath();
-    ctx.arc(7 * s, 0, 4.5 * s, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(-7 * s, 0, 4.5 * s, 0, Math.PI * 2);
-    ctx.stroke();
+    midpointCircleCtx(
+      Math.round(7 * s),
+      0,
+      Math.max(1, Math.round(4.5 * s)),
+      null,
+      col.objBike,
+    );
+    midpointCircleCtx(
+      Math.round(-7 * s),
+      0,
+      Math.max(1, Math.round(4.5 * s)),
+      null,
+      col.objBike,
+    );
     // Setang depan
     ctx.beginPath();
     ctx.moveTo(7 * s, -3.5 * s);
     ctx.lineTo(7 * s, 3.5 * s);
     ctx.stroke();
     // Pengendara
-    ctx.fillStyle = col.objBike;
-    ctx.beginPath();
-    ctx.arc(0, 0, 3 * s, 0, Math.PI * 2);
-    ctx.fill();
+    midpointCircleCtx(0, 0, Math.max(1, Math.round(3 * s)), col.objBike, null);
   } else {
     // Pejalan kaki, hidung ke +X
     ctx.fillStyle = "rgba(0,0,0,0.18)";
@@ -2042,15 +2151,15 @@ function drawMovingObj(obj) {
     ctx.ellipse(1.5 * s, 0, 4.5 * s, 3 * s, 0, 0, Math.PI * 2);
     ctx.fill();
     // Tubuh
-    ctx.fillStyle = col.objPed;
-    ctx.beginPath();
-    ctx.arc(0, 0, 4 * s, 0, Math.PI * 2);
-    ctx.fill();
+    midpointCircleCtx(0, 0, Math.max(1, Math.round(4 * s)), col.objPed, null);
     // Kepala (sisi +X)
-    ctx.fillStyle = "#f5c8a0";
-    ctx.beginPath();
-    ctx.arc(2.5 * s, 0, 2.5 * s, 0, Math.PI * 2);
-    ctx.fill();
+    midpointCircleCtx(
+      Math.round(2.5 * s),
+      0,
+      Math.max(1, Math.round(2.5 * s)),
+      "#f5c8a0",
+      null,
+    );
     // Kaki (animasi atas-bawah)
     const step = Math.sin(animT * 0.3) * 3 * s;
     ctx.fillStyle = col.objPed;
