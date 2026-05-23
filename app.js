@@ -2857,3 +2857,27 @@ window.addEventListener('load', () => {
 
 // =====================================================================
 // PATCH drawMap: tambahkan drawTrafficHeatmap + drawMinimap setelah render
+// =====================================================================
+
+const _drawMapBase = drawMap;
+function drawMap() {
+  _drawMapBase();
+  drawTrafficHeatmap();
+  drawMinimap();
+}
+
+
+// ===================== MAIN LOOP =====================
+function loop() {
+  stepAnimSmooth();
+  if (is3D) drawMap3D();
+  else drawMap();
+  requestAnimationFrame(loop);
+}
+
+// ===================== INIT =====================
+generateMap();
+camX = MAP_W / 2;
+camY = MAP_H / 2;
+setZoom(0.18);
+loop();
