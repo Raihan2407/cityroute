@@ -2740,3 +2740,30 @@ function stepAnimSmooth() {
 
 // =====================================================================
 // FITUR ELSA: DIAGONAL EDGE SEJATI
+// Edge NW→SE dan NE→SW ditambahkan ke graf secara struktural
+// =====================================================================
+
+function addDiagonalEdges(cols, rows, probability = 0.35) {
+  const diagRng = makeRng(Math.floor(Math.random() * 99999));
+  for (let r = 0; r < rows - 1; r++) {
+    for (let c = 0; c < cols - 1; c++) {
+      const TL = r * cols + c;
+      const TR = r * cols + c + 1;
+      const BL = (r + 1) * cols + c;
+      const BR = (r + 1) * cols + c + 1;
+      if (diagRng() < probability && !edgeExists(TL, BR)) {
+        edges.push({ a: TL, b: BR, curved: true });
+        nodes[TL].adj.push(BR);
+        nodes[BR].adj.push(TL);
+      }
+      if (diagRng() < probability * 0.6 && !edgeExists(TR, BL)) {
+        edges.push({ a: TR, b: BL, curved: true });
+        nodes[TR].adj.push(BL);
+        nodes[BL].adj.push(TR);
+      }
+    }
+  }
+}
+
+// =====================================================================
+// FITUR AMAA: TRAFFIC DENSITY HEATMAP — HSL color mapping
