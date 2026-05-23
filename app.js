@@ -2196,3 +2196,106 @@ window.addEventListener('resize', () => {
 // Fitur tambahan akan ditambahkan di bawah oleh masing-masing anggota
 // =====================================================================
 
+// screenX = minimapX + (worldX / MAP_W) * minimapW
+// =====================================================================
+
+const MINIMAP_W   = 160;
+const MINIMAP_H   = 120;
+const MINIMAP_PAD = 14;
+
+function worldToMinimap(wx, wy) {
+  const mx = canvas.width  - MINIMAP_W  - MINIMAP_PAD;
+  const my = canvas.height - MINIMAP_H  - MINIMAP_PAD - 50;
+  return {
+    x: mx + (wx / MAP_W) * MINIMAP_W,
+    y: my + (wy / MAP_H) * MINIMAP_H,
+  };
+}
+
+function drawMinimap() {
+  if (is3D) return;
+  const col = getColors();
+  const mx  = canvas.width  - MINIMAP_W  - MINIMAP_PAD;
+  const my  = canvas.height - MINIMAP_H  - MINIMAP_PAD - 50;
+
+  ctx.save();
+  ctx.fillStyle   = col.bg;
+  ctx.strokeStyle = '#c4c0b8';
+  ctx.lineWidth   = 1;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(mx, my, MINIMAP_W, MINIMAP_H, 6);
+  else ctx.rect(mx, my, MINIMAP_W, MINIMAP_H);
+  ctx.fill(); ctx.stroke();
+
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(mx, my, MINIMAP_W, MINIMAP_H, 6);
+  else ctx.rect(mx, my, MINIMAP_W, MINIMAP_H);
+  ctx.clip();
+
+  ctx.strokeStyle = col.road;
+  ctx.lineWidth   = 1.5;
+  ctx.lineCap     = 'round';
+  for (const e of edges) {
+    const A  = nodes[e.a], B = nodes[e.b];
+    const pA = worldToMinimap(A.x, A.y);
+    const pB = worldToMinimap(B.x, B.y);
+    const cp = getEdgeCP(e);
+    const pC = worldToMinimap(cp.x, cp.y);
+    ctx.beginPath();
+    ctx.moveTo(pA.x, pA.y);
+    ctx.quadraticCurveTo(pC.x, pC.y, pB.x, pB.y);
+    ctx.stroke();
+  }
+
+  if (pathPts.length > 1) {
+    ctx.strokeStyle = '#2563eb';
+    ctx.lineWidth   = 1.5;
+    ctx.beginPath();
+    const p0 = worldToMinimap(pathPts[0].x, pathPts[0].y);
+    ctx.moveTo(p0.x, p0.y);
+    for (let i = 1; i < pathPts.length; i += 3) {
+      const p = worldToMinimap(pathPts[i].x, pathPts[i].y);
+      ctx.lineTo(p.x, p.y);
+    }
+    ctx.stroke();
+  }
+
+  const vLeft   = camX - (canvas.width  / 2) / zoom;
+  const vTop    = camY - (canvas.height / 2) / zoom;
+  const vRight  = camX + (canvas.width  / 2) / zoom;
+  const vBottom = camY + (canvas.height / 2) / zoom;
+  const vpTL    = worldToMinimap(vLeft, vTop);
+  const vpBR    = worldToMinimap(vRight, vBottom);
+  ctx.strokeStyle = 'rgba(37,99,235,0.7)';
+  ctx.fillStyle   = 'rgba(37,99,235,0.08)';
+  ctx.lineWidth   = 1.5;
+  ctx.fillRect(vpTL.x, vpTL.y, vpBR.x - vpTL.x, vpBR.y - vpTL.y);
+  ctx.strokeRect(vpTL.x, vpTL.y, vpBR.x - vpTL.x, vpBR.y - vpTL.y);
+
+  if (nodes[startNode]) {
+    const ps = worldToMinimap(nodes[startNode].x, nodes[startNode].y);
+    ctx.fillStyle = '#16a34a';
+    ctx.beginPath(); ctx.arc(ps.x, ps.y, 3, 0, Math.PI * 2); ctx.fill();
+  }
+  if (nodes[endNode]) {
+    const pe = worldToMinimap(nodes[endNode].x, nodes[endNode].y);
+    ctx.fillStyle = '#dc2626';
+    ctx.beginPath(); ctx.arc(pe.x, pe.y, 3, 0, Math.PI * 2); ctx.fill();
+  }
+  if (movingObj) {
+    const pm = worldToMinimap(movingObj.x, movingObj.y);
+    ctx.fillStyle = '#2563eb';
+    ctx.beginPath(); ctx.arc(pm.x, pm.y, 2.5, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+
+  ctx.fillStyle    = '#aaa';
+  ctx.font         = '9px -apple-system, sans-serif';
+  ctx.textAlign    = 'right';
+  ctx.fillText('MINIMAP', canvas.width - MINIMAP_PAD, my - 4);
+  ctx.textAlign    = 'left';
+}
+
+
+// =====================================================================
+// FITUR NEZA: SPEED CONTROL + SMOOTH EASING — smoothstep(t) = t²(3-2t)
