@@ -13,16 +13,16 @@
    - Acak Peta, Acak Posisi, Start/Pause
    ============================================= */
 
-"use strict";
+'use strict';
 
 // ===================== CANVAS SETUP =====================
-const canvas = document.getElementById("c");
-const ctx = canvas.getContext("2d");
-const app = document.getElementById("app");
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+const app    = document.getElementById('app');
 
 let W = window.innerWidth;
 let H = window.innerHeight;
-canvas.width = W;
+canvas.width  = W;
 canvas.height = H;
 
 // ===================== CONSTANTS =====================
@@ -34,10 +34,10 @@ const MAP_H = 5000;
 
 // Kecepatan animasi per tipe objek (unit titik/frame) — sengaja diperlambat
 const SPEEDS = {
-  car: 0.55,
-  moto: 0.7,
+  car:  0.55,
+  moto: 0.70,
   bike: 0.35,
-  ped: 0.18,
+  ped:  0.18,
 };
 
 // ===================== STATE =====================
@@ -45,87 +45,83 @@ let camX = MAP_W / 2;
 let camY = MAP_H / 2;
 let zoom = 0.18; // zoom awal kecil agar seluruh peta tampak perlu di-scroll
 
-let dragging = false;
-let lastMX = 0;
-let lastMY = 0;
+let dragging      = false;
+let lastMX        = 0;
+let lastMY        = 0;
 let lastTouchDist = 0;
 
-let nodes = []; // { id, x, y, adj[], isRoundabout }
+let nodes       = [];  // { id, x, y, adj[], isRoundabout }
 let roundabouts = new Set(); // indeks node yang merupakan bundaran
-let edges = []; // { a, b }
+let edges     = [];  // { a, b }
 let startNode = 0;
-let endNode = 1;
-let path = []; // urutan indeks node (BFS result)
-let pathPts = []; // titik interpolasi kurva Bezier sepanjang jalur
+let endNode   = 1;
+let path      = [];  // urutan indeks node (BFS result)
+let pathPts   = [];  // titik interpolasi kurva Bezier sepanjang jalur
 
 // Blok tata kota: bangunan, taman, perairan
 // Di-generate sekali saat generateMap() dipanggil
 let cityBlocks = [];
 
-let movingObj = null; // { type, x, y, angle }
-let animT = 0;
+let movingObj   = null; // { type, x, y, angle }
+let animT       = 0;
 let animRunning = false;
-let animPaused = false;
-let selectedType = "car";
+let animPaused  = false;
+let selectedType = 'car';
 
 // ===================== 3D STATE =====================
 let is3D = false;
 let cam3D = {
   theta: -Math.PI / 4,
-  phi: Math.PI / 3,
-  r: 3200,
-  tx: 0,
-  tz: 0,
-  fov: 55,
+  phi:    Math.PI / 3,
+  r:      3200,
+  tx:     0,
+  tz:     0,
+  fov:    55,
 };
-let drag3D = false,
-  drag3DPan = false;
-let last3DMX = 0,
-  last3DMY = 0;
+let drag3D = false, drag3DPan = false;
+let last3DMX = 0, last3DMY = 0;
 
 // ===================== COLOR THEME =====================
 function isDark() {
-  return (
-    window.matchMedia &&
-    window.matchMedia("(prefers-color-scheme:dark)").matches
-  );
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme:dark)').matches;
 }
 
 function getColors() {
   const d = isDark();
   return {
-    bg: d ? "#1c1a16" : "#f0ede6",
-    grid: d ? "rgba(255,255,255,0.03)" : "#e8e3da",
-    road: d ? "#2a2826" : "#c4c0b8",
-    roadSurf: d ? "#3a3835" : "#ffffff",
-    roadMark: d ? "#504c48" : "#dedad2",
-    nodeDot: d ? "#2a2826" : "#c4c0b8",
-    sidewalk: d ? "#2e2c28" : "#dedad2",
-    building: d ? "#2a3040" : "#dde2ec",
-    buildingTop: d ? "#363d50" : "#ccd2e0",
-    buildingWin: d ? "#5080c0" : "#aabee0",
-    buildingShadow: "rgba(0,0,0,0.08)",
-    park: d ? "#1c2e1c" : "#dce8d4",
-    parkTree: d ? "#243828" : "#b8d0aa",
-    parkGround: d ? "#1c2e1c" : "#c4d8b8",
-    water: d ? "#1a2830" : "#d4e8f4",
-    waterRipple: d ? "#1e3040" : "#bcd8ec",
-    waterShine: d ? "#243848" : "#cce0f0",
-    roundaboutRing: d ? "#2a2826" : "#c4c0b8",
-    roundaboutIsland: d ? "#1c2e1c" : "#dce8d4",
-    roundaboutTree: d ? "#243828" : "#b8d0aa",
-    flagG: "#16a34a",
-    flagR: "#dc2626",
-    pathLine: "#2563eb",
-    objCar: "#2563eb",
-    objCar2: "#dc2626",
-    objCar3: "#d97706",
-    objCar4: "#16a34a",
-    objMoto: "#d97706",
-    objBike: "#16a34a",
-    objPed: "#7c3aed",
+    bg:               d ? '#1c1a16' : '#f0ede6',
+    grid:             d ? 'rgba(255,255,255,0.03)' : '#e8e3da',
+    road:             d ? '#2a2826' : '#c4c0b8',
+    roadSurf:         d ? '#3a3835' : '#ffffff',
+    roadMark:         d ? '#504c48' : '#dedad2',
+    nodeDot:          d ? '#2a2826' : '#c4c0b8',
+    sidewalk:         d ? '#2e2c28' : '#dedad2',
+    building:         d ? '#2a3040' : '#dde2ec',
+    buildingTop:      d ? '#363d50' : '#ccd2e0',
+    buildingWin:      d ? '#5080c0' : '#aabee0',
+    buildingShadow:   'rgba(0,0,0,0.08)',
+    park:             d ? '#1c2e1c' : '#dce8d4',
+    parkTree:         d ? '#243828' : '#b8d0aa',
+    parkGround:       d ? '#1c2e1c' : '#c4d8b8',
+    water:            d ? '#1a2830' : '#d4e8f4',
+    waterRipple:      d ? '#1e3040' : '#bcd8ec',
+    waterShine:       d ? '#243848' : '#cce0f0',
+    roundaboutRing:   d ? '#2a2826' : '#c4c0b8',
+    roundaboutIsland: d ? '#1c2e1c' : '#dce8d4',
+    roundaboutTree:   d ? '#243828' : '#b8d0aa',
+    flagG:        '#16a34a',
+    flagR:        '#dc2626',
+    pathLine:     '#2563eb',
+    objCar:       '#2563eb',
+    objCar2:      '#dc2626',
+    objCar3:      '#d97706',
+    objCar4:      '#16a34a',
+    objMoto:      '#d97706',
+    objBike:      '#16a34a',
+    objPed:       '#7c3aed',
   };
 }
+
 
 // ===================== 3D ENGINE: MATRIX & PROJECTION =====================
 /**
@@ -149,53 +145,35 @@ function getColors() {
 
 // Normalisasi vektor 3D
 function vec3norm(v) {
-  const len = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-  return len > 0 ? [v[0] / len, v[1] / len, v[2] / len] : [0, 0, 0];
+  const len = Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+  return len > 0 ? [v[0]/len, v[1]/len, v[2]/len] : [0,0,0];
 }
 
 // Cross product vektor 3D
 function vec3cross(a, b) {
   return [
-    a[1] * b[2] - a[2] * b[1],
-    a[2] * b[0] - a[0] * b[2],
-    a[0] * b[1] - a[1] * b[0],
+    a[1]*b[2] - a[2]*b[1],
+    a[2]*b[0] - a[0]*b[2],
+    a[0]*b[1] - a[1]*b[0],
   ];
 }
 
 // Dot product vektor 3D
-function vec3dot(a, b) {
-  return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-}
+function vec3dot(a, b) { return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]; }
 
 /**
  * mat4lookAt(eye, target, up)
  * Membentuk View Matrix — mengubah world space ke camera space.
  */
 function mat4lookAt(eye, target, up) {
-  const f = vec3norm([
-    eye[0] - target[0],
-    eye[1] - target[1],
-    eye[2] - target[2],
-  ]);
+  const f = vec3norm([eye[0]-target[0], eye[1]-target[1], eye[2]-target[2]]);
   const r = vec3norm(vec3cross(up, f));
   const u = vec3cross(f, r);
   return [
-    r[0],
-    r[1],
-    r[2],
-    -vec3dot(r, eye),
-    u[0],
-    u[1],
-    u[2],
-    -vec3dot(u, eye),
-    f[0],
-    f[1],
-    f[2],
-    -vec3dot(f, eye),
-    0,
-    0,
-    0,
-    1,
+     r[0],  r[1],  r[2], -vec3dot(r, eye),
+     u[0],  u[1],  u[2], -vec3dot(u, eye),
+     f[0],  f[1],  f[2], -vec3dot(f, eye),
+     0,     0,     0,     1,
   ];
 }
 
@@ -205,24 +183,12 @@ function mat4lookAt(eye, target, up) {
  * f = 1 / tan(fov/2)
  */
 function mat4perspective(fovDeg, aspect, near, far) {
-  const f = 1 / Math.tan((fovDeg * Math.PI) / 360);
+  const f = 1 / Math.tan(fovDeg * Math.PI / 360);
   return [
-    f / aspect,
-    0,
-    0,
-    0,
-    0,
-    f,
-    0,
-    0,
-    0,
-    0,
-    (far + near) / (near - far),
-    (2 * far * near) / (near - far),
-    0,
-    0,
-    -1,
-    0,
+    f/aspect, 0,  0,                     0,
+    0,        f,  0,                     0,
+    0,        0,  (far+near)/(near-far), (2*far*near)/(near-far),
+    0,        0, -1,                     0,
   ];
 }
 
@@ -235,17 +201,17 @@ function project3D(px, py, pz) {
   const V = currentViewMatrix;
   const P = currentProjMatrix;
   // View transform
-  const cx = V[0] * px + V[1] * py + V[2] * pz + V[3];
-  const cy = V[4] * px + V[5] * py + V[6] * pz + V[7];
-  const cz = V[8] * px + V[9] * py + V[10] * pz + V[11];
+  const cx = V[0]*px + V[1]*py + V[2]*pz  + V[3];
+  const cy = V[4]*px + V[5]*py + V[6]*pz  + V[7];
+  const cz = V[8]*px + V[9]*py + V[10]*pz + V[11];
   // Projection
-  const clipX = P[0] * cx + P[2] * cz;
-  const clipY = P[5] * cy + P[6] * cz;
-  const clipW = P[10] * cz + P[11];
-  const clipWW = -cz;
-  if (clipWW <= 0.01) return { x: 0, y: 0, w: 0, visible: false };
+  const clipX = P[0]*cx + P[2]*cz;
+  const clipY = P[5]*cy + P[6]*cz;
+  const clipW = P[10]*cz + P[11];
+  const clipWW= -cz;
+  if (clipWW <= 0.01) return { x:0, y:0, w:0, visible:false };
   // NDC -> Screen
-  const ndcX = clipX / clipWW;
+  const ndcX =  clipX / clipWW;
   const ndcY = -clipY / clipWW;
   return {
     x: (ndcX + 1) * 0.5 * W,
@@ -256,8 +222,8 @@ function project3D(px, py, pz) {
 }
 
 // Cache matrix per frame
-let currentViewMatrix = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
-let currentProjMatrix = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+let currentViewMatrix = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
+let currentProjMatrix = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
 
 /**
  * updateCamera3D()
@@ -266,29 +232,23 @@ let currentProjMatrix = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
  */
 function updateCamera3D() {
   const { theta, phi, r, tx, tz, fov } = cam3D;
-  const sinPhi = Math.sin(phi),
-    cosPhi = Math.cos(phi);
-  const sinThe = Math.sin(theta),
-    cosThe = Math.cos(theta);
-  const eye = [tx + r * sinPhi * cosThe, r * cosPhi, tz + r * sinPhi * sinThe];
+  const sinPhi = Math.sin(phi), cosPhi = Math.cos(phi);
+  const sinThe = Math.sin(theta), cosThe = Math.cos(theta);
+  const eye    = [tx + r*sinPhi*cosThe, r*cosPhi, tz + r*sinPhi*sinThe];
   const target = [tx, 0, tz];
-  currentViewMatrix = mat4lookAt(eye, target, [0, 1, 0]);
-  currentProjMatrix = mat4perspective(fov, W / H, 10, 20000);
+  currentViewMatrix = mat4lookAt(eye, target, [0,1,0]);
+  currentProjMatrix = mat4perspective(fov, W/H, 10, 20000);
 }
 
 // World 2D (wx,wy) -> World 3D, pusatkan di origin
-function w3(wx, wy) {
-  return [wx - MAP_W / 2, 0, wy - MAP_H / 2];
-}
+function w3(wx, wy) { return [wx - MAP_W/2, 0, wy - MAP_H/2]; }
 
 // Proyeksikan titik peta 2D ke layar di ketinggian h
 function projH(wx, wy, h) {
   const p = w3(wx, wy);
   return project3D(p[0], -h, p[2]);
 }
-function proj2D(wx, wy) {
-  return projH(wx, wy, 0);
-}
+function proj2D(wx, wy) { return projH(wx, wy, 0); }
 
 // Gambar kurva Bezier kuadratik 3D pada ketinggian h
 function bezier3D(ax, ay, cpx, cpy, bx, by, h, color, lw) {
@@ -296,49 +256,37 @@ function bezier3D(ax, ay, cpx, cpy, bx, by, h, color, lw) {
   let first = true;
   for (let t = 0; t <= 1; t += 0.04) {
     const u = 1 - t;
-    const sx = u * u * ax + 2 * u * t * cpx + t * t * bx;
-    const sy = u * u * ay + 2 * u * t * cpy + t * t * by;
-    const p = projH(sx, sy, h);
-    if (!p.visible) {
-      first = true;
-      continue;
-    }
-    if (first) {
-      ctx.moveTo(p.x, p.y);
-      first = false;
-    } else ctx.lineTo(p.x, p.y);
+    const sx = u*u*ax + 2*u*t*cpx + t*t*bx;
+    const sy = u*u*ay + 2*u*t*cpy + t*t*by;
+    const p  = projH(sx, sy, h);
+    if (!p.visible) { first = true; continue; }
+    if (first) { ctx.moveTo(p.x, p.y); first = false; }
+    else ctx.lineTo(p.x, p.y);
   }
   ctx.strokeStyle = color;
-  ctx.lineWidth = lw;
-  ctx.lineCap = "round";
+  ctx.lineWidth   = lw;
+  ctx.lineCap     = 'round';
   ctx.stroke();
 }
 
 // Gambar polygon 3D (array {x,y} world) pada ketinggian h
 function poly3D(pts, h, fill, stroke, lw) {
-  const prj = pts.map((p) => projH(p.x, p.y, h));
-  if (!prj.some((p) => p.visible)) return;
+  const prj = pts.map(p => projH(p.x, p.y, h));
+  if (!prj.some(p => p.visible)) return;
   ctx.beginPath();
   ctx.moveTo(prj[0].x, prj[0].y);
   for (let i = 1; i < prj.length; i++) ctx.lineTo(prj[i].x, prj[i].y);
   ctx.closePath();
-  if (fill) {
-    ctx.fillStyle = fill;
-    ctx.fill();
-  }
-  if (stroke) {
-    ctx.strokeStyle = stroke;
-    ctx.lineWidth = lw || 1;
-    ctx.stroke();
-  }
+  if (fill)   { ctx.fillStyle   = fill;   ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw||1; ctx.stroke(); }
 }
 
 // Utility: gelapkan/terangkan warna hex
 function shadeColor(hex, amt) {
-  const n = parseInt(hex.replace("#", ""), 16);
-  const r = Math.min(255, Math.max(0, (n >> 16) + amt));
-  const g = Math.min(255, Math.max(0, ((n >> 8) & 0xff) + amt));
-  const b = Math.min(255, Math.max(0, (n & 0xff) + amt));
+  const n = parseInt(hex.replace('#',''), 16);
+  const r = Math.min(255, Math.max(0, (n>>16)       + amt));
+  const g = Math.min(255, Math.max(0, ((n>>8)&0xff) + amt));
+  const b = Math.min(255, Math.max(0, (n&0xff)      + amt));
   return `rgb(${r},${g},${b})`;
 }
 
@@ -350,36 +298,30 @@ function shadeColor(hex, amt) {
  */
 function extrudeBuilding3D(b, col) {
   const pad = 6;
-  const bx = b.x + pad,
-    by = b.y + pad,
-    bw = b.w - pad * 2,
-    bh = b.h - pad * 2;
+  const bx = b.x+pad, by = b.y+pad, bw = b.w-pad*2, bh = b.h-pad*2;
   if (bw < 8 || bh < 8) return;
   const height = (b.floors || 1) * 35;
 
   const C = [
-    { x: bx, y: by },
-    { x: bx + bw, y: by },
-    { x: bx + bw, y: by + bh },
-    { x: bx, y: by + bh },
+    {x:bx,    y:by   }, {x:bx+bw, y:by   },
+    {x:bx+bw, y:by+bh}, {x:bx,    y:by+bh},
   ];
   const pals = [
-    ["#9aa8c0", "#8090a8", "#6a7888"],
-    ["#b09080", "#a08070", "#887060"],
-    ["#90a080", "#809070", "#687858"],
-    ["#b0a870", "#a09860", "#888050"],
+    ['#9aa8c0','#8090a8','#6a7888'],
+    ['#b09080','#a08070','#887060'],
+    ['#90a080','#809070','#687858'],
+    ['#b0a870','#a09860','#888050'],
   ];
-  const [topC, frontC, rightC] =
-    pals[Math.abs(Math.round(bx * 0.01 + by * 0.013)) % 4];
+  const [topC, frontC, rightC] = pals[Math.abs(Math.round(bx*0.01+by*0.013))%4];
 
   // Gambar 4 sisi bangunan dengan back-face culling
   // Back-face culling: cross product Z dari winding order di screen space
   // Jika cross product < 0 = face menghadap kamera (counter-clockwise = visible)
   const sidesDef = [
-    { i0: 0, i1: 1, color: frontC },
-    { i0: 1, i1: 2, color: rightC },
-    { i0: 2, i1: 3, color: frontC },
-    { i0: 3, i1: 0, color: rightC },
+    { i0:0, i1:1, color: frontC },
+    { i0:1, i1:2, color: rightC },
+    { i0:2, i1:3, color: frontC },
+    { i0:3, i1:0, color: rightC },
   ];
 
   for (const sd of sidesDef) {
@@ -390,91 +332,71 @@ function extrudeBuilding3D(b, col) {
     if (!p0.visible && !p1.visible && !p0t.visible && !p1t.visible) continue;
 
     // Winding check: cross product (p1-p0) x (p0t-p0)
-    const ex = p1.x - p0.x,
-      ey = p1.y - p0.y;
-    const fx = p0t.x - p0.x,
-      fy = p0t.y - p0.y;
+    const ex = p1.x - p0.x, ey = p1.y - p0.y;
+    const fx = p0t.x - p0.x, fy = p0t.y - p0.y;
     if (ex * fy - ey * fx > 0) continue; // back face, skip
 
     ctx.beginPath();
-    ctx.moveTo(p0.x, p0.y);
-    ctx.lineTo(p1.x, p1.y);
-    ctx.lineTo(p1t.x, p1t.y);
-    ctx.lineTo(p0t.x, p0t.y);
+    ctx.moveTo(p0.x,p0.y); ctx.lineTo(p1.x,p1.y);
+    ctx.lineTo(p1t.x,p1t.y); ctx.lineTo(p0t.x,p0t.y);
     ctx.closePath();
-    ctx.fillStyle = sd.color;
-    ctx.fill();
-    ctx.strokeStyle = "rgba(0,0,0,0.12)";
-    ctx.lineWidth = 0.5;
-    ctx.stroke();
+    ctx.fillStyle = sd.color; ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.12)'; ctx.lineWidth = 0.5; ctx.stroke();
 
     // Jendela di sisi yang visible
     const winW = Math.abs(p1t.x - p0t.x);
     const winH = Math.abs(p0.y - p0t.y);
     if (winW > 10 && winH > 10) {
       const wCols = Math.max(1, Math.round(winW / 14));
-      const wRows = Math.min(b.floors || 1, 5);
+      const wRows = Math.min(b.floors||1, 5);
       for (let wr = 0; wr < wRows; wr++) {
         for (let wc = 0; wc < wCols; wc++) {
-          const wx = p0t.x + ((wc + 0.5) * (p1t.x - p0t.x)) / wCols;
-          const wy = p0t.y + (0.15 + (wr * 0.75) / wRows) * (p0.y - p0t.y);
-          const ws = Math.max(2, (winW / wCols) * 0.4);
-          ctx.fillStyle =
-            (wr * 7 + wc * 13) % 5 !== 0
-              ? "rgba(180,220,255,0.85)"
-              : "rgba(0,0,0,0.3)";
-          ctx.fillRect(wx - ws / 2, wy - ws * 0.7, ws, ws * 1.4);
+          const wx = p0t.x + (wc + 0.5) * (p1t.x - p0t.x) / wCols;
+          const wy = p0t.y + (0.15 + wr * 0.75 / wRows) * (p0.y - p0t.y);
+          const ws = Math.max(2, winW / wCols * 0.4);
+          ctx.fillStyle = ((wr*7+wc*13)%5!==0) ? 'rgba(180,220,255,0.85)' : 'rgba(0,0,0,0.3)';
+          ctx.fillRect(wx - ws/2, wy - ws*0.7, ws, ws*1.4);
         }
       }
     }
   }
 
   // dummy vars agar tidak error referensi lama
-  const ff = [];
-  const ffh = [];
+  const ff = []; const ffh = [];
 
   // Top face (atap)
-  const top = C.map((c) => projH(c.x, c.y, height));
-  if (top.some((p) => p.visible)) {
+  const top = C.map(c => projH(c.x, c.y, height));
+  if (top.some(p=>p.visible)) {
     ctx.beginPath();
-    ctx.moveTo(top[0].x, top[0].y);
-    top.slice(1).forEach((p) => ctx.lineTo(p.x, p.y));
-    ctx.closePath();
-    ctx.fillStyle = topC;
-    ctx.fill();
-    ctx.strokeStyle = "rgba(0,0,0,0.15)";
-    ctx.lineWidth = 0.5;
-    ctx.stroke();
+    ctx.moveTo(top[0].x,top[0].y);
+    top.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
+    ctx.closePath(); ctx.fillStyle=topC; ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,0.15)'; ctx.lineWidth=0.5; ctx.stroke();
   }
 }
 
 // Gambar bendera 3D
 function drawFlag3D(wx, wy, color) {
   const base = proj2D(wx, wy);
-  const top = projH(wx, wy, 120);
+  const top  = projH(wx, wy, 120);
   if (!base.visible || !top.visible) return;
 
   // Tiang
-  ctx.beginPath();
-  ctx.moveTo(base.x, base.y);
-  ctx.lineTo(top.x, top.y);
-  ctx.strokeStyle = "#888";
-  ctx.lineWidth = 2;
-  ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(base.x, base.y); ctx.lineTo(top.x, top.y);
+  ctx.strokeStyle = '#888'; ctx.lineWidth = 2; ctx.stroke();
 
   // Arah bendera: proyeksikan titik di world +X dari tiang
   // Ambil arah kanan relatif kamera dari theta orbit
   const rightX = projH(wx + 80, wy, 90);
-  const botPt = projH(wx + 80, wy, 60);
+  const botPt  = projH(wx + 80, wy, 60);
   if (!rightX.visible) return;
 
   ctx.beginPath();
-  ctx.moveTo(top.x, top.y);
+  ctx.moveTo(top.x,    top.y);
   ctx.lineTo(rightX.x, rightX.y);
-  ctx.lineTo(botPt.x, botPt.y);
+  ctx.lineTo(botPt.x,  botPt.y);
   ctx.closePath();
-  ctx.fillStyle = color;
-  ctx.fill();
+  ctx.fillStyle = color; ctx.fill();
 }
 
 // Gambar kendaraan 3D (ekstrusi kotak)
@@ -482,82 +404,50 @@ function drawMovingObj3D(obj, col) {
   const base = proj2D(obj.x, obj.y);
   if (!base.visible) return;
   // Ukuran kendaraan lebih besar agar terlihat di mode 3D
-  const bodyH =
-    obj.type === "car"
-      ? 50
-      : obj.type === "moto"
-        ? 40
-        : obj.type === "bike"
-          ? 30
-          : 60;
-  const hl = obj.type === "ped" ? 18 : obj.type === "bike" ? 22 : 35;
-  const hw = obj.type === "ped" ? 18 : obj.type === "bike" ? 14 : 22;
-  const cc = [col.objCar, col.objCar2, col.objCar3, col.objCar4][
-    (obj.colorIdx || 0) % 4
-  ];
-  const dx = Math.cos(obj.angle),
-    dz = Math.sin(obj.angle);
-  const rx = -dz,
-    rz = dx;
+  const bodyH = obj.type==='car' ? 50 : obj.type==='moto' ? 40 : obj.type==='bike' ? 30 : 60;
+  const hl    = obj.type==='ped' ? 18 : obj.type==='bike' ? 22 : 35;
+  const hw    = obj.type==='ped' ? 18 : obj.type==='bike' ? 14 : 22;
+  const cc    = [col.objCar,col.objCar2,col.objCar3,col.objCar4][(obj.colorIdx||0)%4];
+  const dx = Math.cos(obj.angle), dz = Math.sin(obj.angle);
+  const rx = -dz, rz = dx;
   const C3 = [
-    [obj.x + dx * hl + rx * hw, obj.y + dz * hl + rz * hw],
-    [obj.x + dx * hl - rx * hw, obj.y + dz * hl - rz * hw],
-    [obj.x - dx * hl - rx * hw, obj.y - dz * hl - rz * hw],
-    [obj.x - dx * hl + rx * hw, obj.y - dz * hl + rz * hw],
+    [obj.x+dx*hl+rx*hw, obj.y+dz*hl+rz*hw],
+    [obj.x+dx*hl-rx*hw, obj.y+dz*hl-rz*hw],
+    [obj.x-dx*hl-rx*hw, obj.y-dz*hl-rz*hw],
+    [obj.x-dx*hl+rx*hw, obj.y-dz*hl+rz*hw],
   ];
-  const bot = C3.map((c) => proj2D(c[0], c[1]));
-  const top = C3.map((c) => projH(c[0], c[1], bodyH));
-  if (!top.some((p) => p.visible)) return;
+  const bot = C3.map(c=>proj2D(c[0],c[1]));
+  const top = C3.map(c=>projH(c[0],c[1],bodyH));
+  if (!top.some(p=>p.visible)) return;
   const vehSides = [
-    { i0: 0, i1: 1, shade: 0 },
-    { i0: 1, i1: 2, shade: -30 },
-    { i0: 2, i1: 3, shade: -15 },
-    { i0: 3, i1: 0, shade: -20 },
+    { i0:0, i1:1, shade:  0 },
+    { i0:1, i1:2, shade: -30 },
+    { i0:2, i1:3, shade: -15 },
+    { i0:3, i1:0, shade: -20 },
   ];
   for (const vs of vehSides) {
-    const p0 = bot[vs.i0],
-      p1 = bot[vs.i1],
-      p0t = top[vs.i0],
-      p1t = top[vs.i1];
-    const ex = p1.x - p0.x,
-      ey = p1.y - p0.y,
-      fx = p0t.x - p0.x,
-      fy = p0t.y - p0.y;
-    if (ex * fy - ey * fx > 0) continue;
+    const p0=bot[vs.i0], p1=bot[vs.i1], p0t=top[vs.i0], p1t=top[vs.i1];
+    const ex=p1.x-p0.x, ey=p1.y-p0.y, fx=p0t.x-p0.x, fy=p0t.y-p0.y;
+    if (ex*fy - ey*fx > 0) continue;
     ctx.beginPath();
-    ctx.moveTo(p0.x, p0.y);
-    ctx.lineTo(p1.x, p1.y);
-    ctx.lineTo(p1t.x, p1t.y);
-    ctx.lineTo(p0t.x, p0t.y);
+    ctx.moveTo(p0.x,p0.y); ctx.lineTo(p1.x,p1.y);
+    ctx.lineTo(p1t.x,p1t.y); ctx.lineTo(p0t.x,p0t.y);
     ctx.closePath();
-    ctx.fillStyle = vs.shade === 0 ? cc : shadeColor(cc, vs.shade);
-    ctx.fill();
-    ctx.strokeStyle = "rgba(0,0,0,0.15)";
-    ctx.lineWidth = 0.5;
-    ctx.stroke();
+    ctx.fillStyle = vs.shade===0 ? cc : shadeColor(cc, vs.shade); ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,0.15)'; ctx.lineWidth=0.5; ctx.stroke();
   }
   ctx.beginPath();
-  top.forEach((p, i) =>
-    i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y),
-  );
-  ctx.closePath();
-  ctx.fillStyle = shadeColor(cc, 20);
-  ctx.fill();
-  if (obj.type === "car") {
-    const ex0 = bot[1].x - bot[0].x,
-      ey0 = bot[1].y - bot[0].y;
-    const fx0 = top[0].x - bot[0].x,
-      fy0 = top[0].y - bot[0].y;
-    if (ex0 * fy0 - ey0 * fx0 <= 0) {
-      const wf = C3.map((c) => projH(c[0], c[1], bodyH * 0.5));
+  top.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+  ctx.closePath(); ctx.fillStyle=shadeColor(cc,20); ctx.fill();
+  if (obj.type==='car') {
+    const ex0=bot[1].x-bot[0].x, ey0=bot[1].y-bot[0].y;
+    const fx0=top[0].x-bot[0].x, fy0=top[0].y-bot[0].y;
+    if (ex0*fy0 - ey0*fx0 <= 0) {
+      const wf=C3.map(c=>projH(c[0],c[1],bodyH*0.5));
       ctx.beginPath();
-      ctx.moveTo(wf[0].x, wf[0].y);
-      ctx.lineTo(wf[1].x, wf[1].y);
-      ctx.lineTo(top[1].x, top[1].y);
-      ctx.lineTo(top[0].x, top[0].y);
-      ctx.closePath();
-      ctx.fillStyle = "rgba(180,225,255,0.75)";
-      ctx.fill();
+      ctx.moveTo(wf[0].x,wf[0].y); ctx.lineTo(wf[1].x,wf[1].y);
+      ctx.lineTo(top[1].x,top[1].y); ctx.lineTo(top[0].x,top[0].y);
+      ctx.closePath(); ctx.fillStyle='rgba(180,225,255,0.75)'; ctx.fill();
     }
   }
 }
@@ -576,148 +466,96 @@ function drawMap3D() {
 
   // Grid subtle
   ctx.strokeStyle = col.grid;
-  ctx.lineWidth = 0.5;
+  ctx.lineWidth   = 0.5;
   const gs = 100 * (W / MAP_W);
   for (let x = 0; x < W; x += gs * 8) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, H);
-    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
   }
   for (let y = 0; y < H; y += gs * 8) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(W, y);
-    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
   }
 
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
 
   // 1. Trotoar
   for (const e of edges) {
-    const A = nodes[e.a],
-      B = nodes[e.b],
-      cp = getEdgeCP(e);
-    bezier3D(A.x, A.y, cp.x, cp.y, B.x, B.y, 0, col.sidewalk, 34);
+    const A=nodes[e.a], B=nodes[e.b], cp=getEdgeCP(e);
+    bezier3D(A.x,A.y,cp.x,cp.y,B.x,B.y, 0, col.sidewalk, 34);
   }
 
   // 2. Border jalan
   for (const e of edges) {
-    const A = nodes[e.a],
-      B = nodes[e.b],
-      cp = getEdgeCP(e);
-    bezier3D(A.x, A.y, cp.x, cp.y, B.x, B.y, 1, col.road, 26);
+    const A=nodes[e.a], B=nodes[e.b], cp=getEdgeCP(e);
+    bezier3D(A.x,A.y,cp.x,cp.y,B.x,B.y, 1, col.road, 26);
   }
 
   // 3. Permukaan aspal
   for (const e of edges) {
-    const A = nodes[e.a],
-      B = nodes[e.b],
-      cp = getEdgeCP(e);
-    bezier3D(A.x, A.y, cp.x, cp.y, B.x, B.y, 2, col.roadSurf, 20);
+    const A=nodes[e.a], B=nodes[e.b], cp=getEdgeCP(e);
+    bezier3D(A.x,A.y,cp.x,cp.y,B.x,B.y, 2, col.roadSurf, 20);
   }
 
   // 4. Marka jalan (dashed manual)
   for (const e of edges) {
-    const A = nodes[e.a],
-      B = nodes[e.b],
-      cp = getEdgeCP(e);
-    const pts = [];
-    for (let t = 0; t <= 1; t += 0.02) {
-      const u = 1 - t;
-      pts.push({
-        x: u * u * A.x + 2 * u * t * cp.x + t * t * B.x,
-        y: u * u * A.y + 2 * u * t * cp.y + t * t * B.y,
-      });
+    const A=nodes[e.a], B=nodes[e.b], cp=getEdgeCP(e);
+    const pts=[];
+    for (let t=0;t<=1;t+=0.02) {
+      const u=1-t;
+      pts.push({x:u*u*A.x+2*u*t*cp.x+t*t*B.x, y:u*u*A.y+2*u*t*cp.y+t*t*B.y});
     }
-    let draw = true,
-      acc = 0;
+    let draw=true, acc=0;
     const dashLen = e.curved ? 8 : 12;
-    for (let i = 1; i < pts.length; i++) {
-      const p1 = projH(pts[i - 1].x, pts[i - 1].y, 3);
-      const p2 = projH(pts[i].x, pts[i].y, 3);
-      if (!p1.visible || !p2.visible) continue;
-      acc += Math.hypot(p2.x - p1.x, p2.y - p1.y);
+    for (let i=1;i<pts.length;i++) {
+      const p1=projH(pts[i-1].x,pts[i-1].y,3);
+      const p2=projH(pts[i].x,pts[i].y,3);
+      if (!p1.visible||!p2.visible) continue;
+      acc+=Math.hypot(p2.x-p1.x,p2.y-p1.y);
       if (draw) {
-        ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
-        ctx.strokeStyle = col.roadMark;
-        ctx.lineWidth = 2;
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y);
+        ctx.strokeStyle=col.roadMark; ctx.lineWidth=2; ctx.stroke();
       }
-      if (acc > dashLen) {
-        draw = !draw;
-        acc = 0;
-      }
+      if (acc>dashLen) { draw=!draw; acc=0; }
     }
   }
 
   // 5. Taman & Air (flat ground)
   for (const b of cityBlocks) {
-    const C = [
-      { x: b.x, y: b.y },
-      { x: b.x + b.w, y: b.y },
-      { x: b.x + b.w, y: b.y + b.h },
-      { x: b.x, y: b.y + b.h },
-    ];
-    if (b.type === "park") {
+    const C=[{x:b.x,y:b.y},{x:b.x+b.w,y:b.y},{x:b.x+b.w,y:b.y+b.h},{x:b.x,y:b.y+b.h}];
+    if (b.type==='park') {
       poly3D(C, 1, col.park, col.parkTree, 0.5);
       // Pohon 3D sederhana
-      const rng = makeRng(b.treeSeed || 42);
-      for (let k = 0; k < Math.min(b.treeCount || 3, 5); k++) {
-        const tx = b.x + rng() * b.w,
-          ty = b.y + rng() * b.h;
-        const tBase = proj2D(tx, ty),
-          tTop = projH(tx, ty, 70);
+      const rng = makeRng(b.treeSeed||42);
+      for (let k=0;k<Math.min(b.treeCount||3,5);k++) {
+        const tx=b.x+rng()*b.w, ty=b.y+rng()*b.h;
+        const tBase=proj2D(tx,ty), tTop=projH(tx,ty,70);
         if (tBase.visible) {
           // Batang
-          ctx.beginPath();
-          ctx.moveTo(tBase.x, tBase.y);
-          ctx.lineTo(tTop.x, tTop.y);
-          ctx.strokeStyle = "#8a7a60";
-          ctx.lineWidth = 2;
-          ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(tBase.x,tBase.y); ctx.lineTo(tTop.x,tTop.y);
+          ctx.strokeStyle='#8a7a60'; ctx.lineWidth=2; ctx.stroke();
           // Mahkota ukuran proporsional depth
           const cr = Math.max(4, Math.min(20, tTop.w * 0.008));
-          midpointCircleCtx(
-            Math.round(tTop.x),
-            Math.round(tTop.y),
-            Math.max(1, Math.round(cr)),
-            col.parkTree,
-            null,
-          );
-          midpointCircleCtx(
-            Math.round(tTop.x - cr * 0.25),
-            Math.round(tTop.y - cr * 0.25),
-            Math.max(1, Math.round(cr * 0.55)),
-            col.parkGround,
-            null,
-          );
+          midpointCircleCtx(Math.round(tTop.x), Math.round(tTop.y),
+            Math.max(1,Math.round(cr)), col.parkTree, null);
+          midpointCircleCtx(Math.round(tTop.x-cr*0.25), Math.round(tTop.y-cr*0.25),
+            Math.max(1,Math.round(cr*0.55)), col.parkGround, null);
         }
       }
-    } else if (b.type === "water") {
+    } else if (b.type==='water') {
       poly3D(C, 1, col.water, col.waterRipple, 0.5);
       // Riak air
-      const wc = proj2D(b.x + b.w / 2, b.y + b.h / 2);
+      const wc = proj2D(b.x+b.w/2, b.y+b.h/2);
       if (wc.visible) {
-        midpointCircleCtx(
-          Math.round(wc.x),
-          Math.round(wc.y),
-          8,
-          null,
-          col.waterRipple,
-        );
+        midpointCircleCtx(Math.round(wc.x), Math.round(wc.y), 8,
+          null, col.waterRipple);
       }
     }
   }
 
   // 6. Bangunan (ekstrusi 3D, Painter's Algorithm)
-  const buildings = cityBlocks.filter((b) => b.type === "building");
-  buildings.sort((a, b) => {
-    const da = proj2D(a.x + a.w / 2, a.y + a.h / 2).w;
-    const db = proj2D(b.x + b.w / 2, b.y + b.h / 2).w;
+  const buildings = cityBlocks.filter(b=>b.type==='building');
+  buildings.sort((a,b) => {
+    const da = proj2D(a.x+a.w/2, a.y+a.h/2).w;
+    const db = proj2D(b.x+b.w/2, b.y+b.h/2).w;
     return db - da; // .w besar=dekat, gambar terjauh (w kecil) dulu
   });
   for (const b of buildings) extrudeBuilding3D(b, col);
@@ -725,15 +563,13 @@ function drawMap3D() {
   // 7. Bundaran
   for (const n of nodes) {
     if (!n.isRoundabout) continue;
-    const r = n.roundaboutRadius,
-      ri = r * 0.5;
-    const SEGS = 20;
-    const outer = [],
-      inner = [];
-    for (let k = 0; k < SEGS; k++) {
-      const a = (k / SEGS) * Math.PI * 2;
-      outer.push({ x: n.x + Math.cos(a) * r, y: n.y + Math.sin(a) * r });
-      inner.push({ x: n.x + Math.cos(a) * ri, y: n.y + Math.sin(a) * ri });
+    const r=n.roundaboutRadius, ri=r*0.50;
+    const SEGS=20;
+    const outer=[], inner=[];
+    for (let k=0;k<SEGS;k++) {
+      const a=(k/SEGS)*Math.PI*2;
+      outer.push({x:n.x+Math.cos(a)*r, y:n.y+Math.sin(a)*r});
+      inner.push({x:n.x+Math.cos(a)*ri,y:n.y+Math.sin(a)*ri});
     }
     poly3D(outer, 2, col.road, col.road, 0.5);
     poly3D(outer, 2, col.roadSurf, null, 0);
@@ -741,30 +577,21 @@ function drawMap3D() {
 
     if (n.isMainRoundabout) {
       // Air mancur bundaran utama
-      const fr = Math.max(5, Math.round(ri * 0.3));
-      const fC = [];
-      for (let k = 0; k < 16; k++) {
-        const a = (k / 16) * Math.PI * 2;
-        fC.push({ x: n.x + Math.cos(a) * fr, y: n.y + Math.sin(a) * fr });
+      const fr = Math.max(5, Math.round(ri*0.30));
+      const fC  = [];
+      for (let k=0;k<16;k++) {
+        const a=(k/16)*Math.PI*2;
+        fC.push({x:n.x+Math.cos(a)*fr, y:n.y+Math.sin(a)*fr});
       }
       poly3D(fC, 6, col.water, col.waterRipple, 0.5);
       // Semburan air
-      const fTop = projH(n.x, n.y, fr * 4);
+      const fTop = projH(n.x, n.y, fr*4);
       const fBot = projH(n.x, n.y, 5);
       if (fBot.visible) {
-        ctx.beginPath();
-        ctx.moveTo(fBot.x, fBot.y);
-        ctx.lineTo(fTop.x, fTop.y);
-        ctx.strokeStyle = col.waterShine;
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        midpointCircleCtx(
-          Math.round(fTop.x),
-          Math.round(fTop.y),
-          4,
-          col.waterShine,
-          null,
-        );
+        ctx.beginPath(); ctx.moveTo(fBot.x,fBot.y); ctx.lineTo(fTop.x,fTop.y);
+        ctx.strokeStyle=col.waterShine; ctx.lineWidth=2; ctx.stroke();
+        midpointCircleCtx(Math.round(fTop.x), Math.round(fTop.y), 4,
+          col.waterShine, null);
       }
     }
   }
@@ -772,72 +599,56 @@ function drawMap3D() {
   // 8. Persimpangan biasa
   for (const n of nodes) {
     if (n.isRoundabout) continue;
-    const SEGS = 12,
-      pts = [],
-      pts2 = [];
-    for (let k = 0; k < SEGS; k++) {
-      const a = (k / SEGS) * Math.PI * 2;
-      pts.push({ x: n.x + Math.cos(a) * 12, y: n.y + Math.sin(a) * 12 });
-      pts2.push({ x: n.x + Math.cos(a) * 10, y: n.y + Math.sin(a) * 10 });
+    const SEGS=12, pts=[], pts2=[];
+    for (let k=0;k<SEGS;k++) {
+      const a=(k/SEGS)*Math.PI*2;
+      pts.push({x:n.x+Math.cos(a)*12, y:n.y+Math.sin(a)*12});
+      pts2.push({x:n.x+Math.cos(a)*10,y:n.y+Math.sin(a)*10});
     }
-    poly3D(pts, 2, col.road, null, 0);
+    poly3D(pts,  2, col.road, null, 0);
     poly3D(pts2, 2, col.roadSurf, null, 0);
   }
 
   // 9. Jalur A*
-  if (pathPts.length > 1) {
-    for (let i = 1; i < pathPts.length; i++) {
-      const p1 = projH(pathPts[i - 1].x, pathPts[i - 1].y, 5);
-      const p2 = projH(pathPts[i].x, pathPts[i].y, 5);
-      if (!p1.visible || !p2.visible) continue;
-      ctx.beginPath();
-      ctx.moveTo(p1.x, p1.y);
-      ctx.lineTo(p2.x, p2.y);
-      ctx.strokeStyle = col.pathLine;
-      ctx.lineWidth = 2.5;
-      ctx.globalAlpha = 0.9;
-      ctx.stroke();
-      ctx.globalAlpha = 1;
+  if (pathPts.length>1) {
+    for (let i=1;i<pathPts.length;i++) {
+      const p1=projH(pathPts[i-1].x,pathPts[i-1].y,5);
+      const p2=projH(pathPts[i].x,  pathPts[i].y,  5);
+      if (!p1.visible||!p2.visible) continue;
+      ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y);
+      ctx.strokeStyle=col.pathLine; ctx.lineWidth=2.5;
+      ctx.globalAlpha=0.9; ctx.stroke(); ctx.globalAlpha=1;
     }
   }
 
   // 10. Bendera & kendaraan
-  if (nodes[startNode])
-    drawFlag3D(nodes[startNode].x, nodes[startNode].y, col.flagG);
-  if (nodes[endNode]) drawFlag3D(nodes[endNode].x, nodes[endNode].y, col.flagR);
+  if (nodes[startNode]) drawFlag3D(nodes[startNode].x, nodes[startNode].y, col.flagG);
+  if (nodes[endNode])   drawFlag3D(nodes[endNode].x,   nodes[endNode].y,   col.flagR);
   if (movingObj) drawMovingObj3D(movingObj, col);
 
   // 11. HUD kamera
-  ctx.fillStyle = "rgba(255,255,255,0.85)";
-  ctx.strokeStyle = "#e4e0da";
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.strokeStyle = '#e4e0da';
   ctx.lineWidth = 1;
-  const hw = 200,
-    hh = 28,
-    hx = W / 2 - hw / 2,
-    hy = H - 48;
+  const hw = 200, hh = 28, hx = W/2 - hw/2, hy = H - 48;
   ctx.beginPath();
   if (ctx.roundRect) ctx.roundRect(hx, hy, hw, hh, 6);
   else ctx.rect(hx, hy, hw, hh);
-  ctx.fill();
-  ctx.stroke();
-  ctx.fillStyle = "#888";
-  ctx.font = "11px -apple-system, sans-serif";
-  ctx.textAlign = "center";
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#888';
+  ctx.font = '11px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
   ctx.fillText(
-    `theta ${((cam3D.theta * 180) / Math.PI).toFixed(0)}\u00b0  |  phi ${((cam3D.phi * 180) / Math.PI).toFixed(0)}\u00b0  |  zoom ${cam3D.r.toFixed(0)}`,
-    W / 2,
-    hy + 18,
+    `theta ${(cam3D.theta*180/Math.PI).toFixed(0)}\u00b0  |  phi ${(cam3D.phi*180/Math.PI).toFixed(0)}\u00b0  |  zoom ${cam3D.r.toFixed(0)}`,
+    W/2, hy + 18
   );
-  ctx.textAlign = "left";
+  ctx.textAlign = 'left';
 }
 
+
 // ===================== UTILITIES =====================
-function rnd(a, b) {
-  return a + Math.random() * (b - a);
-}
-function rndInt(a, b) {
-  return Math.floor(rnd(a, b + 1));
-}
+function rnd(a, b)    { return a + Math.random() * (b - a); }
+function rndInt(a, b) { return Math.floor(rnd(a, b + 1)); }
 
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -848,9 +659,7 @@ function shuffle(arr) {
 }
 
 function edgeExists(a, b) {
-  return edges.some(
-    (e) => (e.a === a && e.b === b) || (e.a === b && e.b === a),
-  );
+  return edges.some(e => (e.a === a && e.b === b) || (e.a === b && e.b === a));
 }
 
 // ===================== BRESENHAM LINE DRAWING =====================
@@ -918,13 +727,13 @@ function bresenhamLine(x1, y1, x2, y2, color, lineWidth = 1) {
     if (p >= 0) {
       // Geser sumbu minor
       if (swapped) x += sx;
-      else y += sy;
+      else         y += sy;
       p -= 2 * dx;
     }
 
     // Selalu geser sumbu mayor
     if (swapped) y += sy;
-    else x += sx;
+    else         x += sx;
     p += 2 * dy;
   }
 }
@@ -940,10 +749,7 @@ function addEdge(a, b) {
 // Seeded PRNG sederhana (LCG) — agar dekorasi konsisten per generate
 function makeRng(seed) {
   let s = seed;
-  return () => {
-    s = (s * 9301 + 49297) % 233280;
-    return s / 233280;
-  };
+  return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
 }
 
 // ===================== MAP GENERATION =====================
@@ -955,9 +761,9 @@ function makeRng(seed) {
  * 4. Generate blok tata kota di antara ruas jalan
  */
 function generateMap() {
-  nodes = [];
-  edges = [];
-  cityBlocks = [];
+  nodes       = [];
+  edges       = [];
+  cityBlocks  = [];
   roundabouts = new Set();
 
   // Pusat peta = lokasi bundaran utama
@@ -968,22 +774,22 @@ function generateMap() {
   // Grid rapi tapi sedikit organik (jitter 10%)
   const cols = 7;
   const rows = 5;
-  const gw = MAP_W / (cols + 1); // ~667
-  const gh = MAP_H / (rows + 1); // ~714
+  const gw   = MAP_W / (cols + 1);  // ~667
+  const gh   = MAP_H / (rows + 1);  // ~714
 
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       // Node tengah (baris 2, col 3) = pusat kota
       // Jitter lebih kecil di dekat pusat
       const distToCenter = Math.hypot(
-        c + 1 - (cols + 1) / 2,
-        r + 1 - (rows + 1) / 2,
+        (c + 1) - (cols + 1) / 2,
+        (r + 1) - (rows + 1) / 2
       );
       const jit = 0.06 + distToCenter * 0.025;
       nodes.push({
-        id: r * cols + c,
-        x: gw * (c + 1) + rnd(-gw * jit, gw * jit),
-        y: gh * (r + 1) + rnd(-gh * jit, gh * jit),
+        id:  r * cols + c,
+        x:   gw * (c + 1) + rnd(-gw * jit, gw * jit),
+        y:   gh * (r + 1) + rnd(-gh * jit, gh * jit),
         adj: [],
         isRoundabout: false,
       });
@@ -998,13 +804,13 @@ function generateMap() {
       const i = r * cols + c;
       if (c < cols - 1) {
         const j = r * cols + c + 1;
-        edges.push({ a: i, b: j, curved: curveRng() < 0.9 });
+        edges.push({ a: i, b: j, curved: curveRng() < 0.90 });
         nodes[i].adj.push(j);
         nodes[j].adj.push(i);
       }
       if (r < rows - 1) {
         const j = (r + 1) * cols + c;
-        edges.push({ a: i, b: j, curved: curveRng() < 0.9 });
+        edges.push({ a: i, b: j, curved: curveRng() < 0.90 });
         nodes[i].adj.push(j);
         nodes[j].adj.push(i);
       }
@@ -1018,23 +824,19 @@ function generateMap() {
   // Radius bundaran utama = 18% dari jarak ke tetangga
   let minDistCenter = Infinity;
   for (const adjIdx of centerNode.adj) {
-    minDistCenter = Math.min(
-      minDistCenter,
-      Math.hypot(
-        nodes[adjIdx].x - centerNode.x,
-        nodes[adjIdx].y - centerNode.y,
-      ),
-    );
+    minDistCenter = Math.min(minDistCenter,
+      Math.hypot(nodes[adjIdx].x - centerNode.x, nodes[adjIdx].y - centerNode.y));
   }
-  centerNode.isRoundabout = true;
+  centerNode.isRoundabout    = true;
   centerNode.roundaboutRadius = Math.min(55, minDistCenter * 0.22);
-  centerNode.isMainRoundabout = true; // tandai sebagai bundaran utama
+  centerNode.isMainRoundabout = true;  // tandai sebagai bundaran utama
   roundabouts.add(centerNode.id);
 
   // Bundaran kecil di perempatan lain (max 4, adj==4)
   detectRoundaboutsSecondary(centerIdx);
 
   generateCityBlocks(cols, rows, gw, gh);
+  addDiagonalEdges(cols, rows, 0.30);
   randomPositions();
 }
 
@@ -1059,35 +861,34 @@ function detectRoundabouts() {}
 function detectRoundaboutsSecondary(skipIdx) {
   // Pilih max 4 bundaran kecil dari node adj==4
   // Kecuali node tengah (sudah jadi bundaran utama)
-  const MAX = 4;
+  const MAX   = 4;
   const MDIST = 800;
-  const seed = makeRng(Math.floor(Math.random() * 99999));
+  const seed  = makeRng(Math.floor(Math.random() * 99999));
   const cands = nodes
-    .filter((n) => n.adj.length === 4 && n.id !== skipIdx)
+    .filter(n => n.adj.length === 4 && n.id !== skipIdx)
     .sort(() => seed() - 0.5);
 
   const placed = [nodes[skipIdx]]; // hindari terlalu dekat bundaran utama
   for (const n of cands) {
     if (placed.length - 1 >= MAX) break;
     const tooClose = placed.some(
-      (p) => Math.hypot(p.x - n.x, p.y - n.y) < MDIST,
+      p => Math.hypot(p.x - n.x, p.y - n.y) < MDIST
     );
     if (tooClose) continue;
     let minD = Infinity;
     for (const ai of n.adj)
-      minD = Math.min(minD, Math.hypot(nodes[ai].x - n.x, nodes[ai].y - n.y));
+      minD = Math.min(minD, Math.hypot(nodes[ai].x-n.x, nodes[ai].y-n.y));
     n.roundaboutRadius = Math.min(16, minD * 0.18);
-    n.isRoundabout = true;
+    n.isRoundabout     = true;
     roundabouts.add(n.id);
     placed.push(n);
   }
 }
 
 function drawRoundabout(node, col) {
-  const cx = node.x,
-    cy = node.y;
-  const r = node.roundaboutRadius;
-  const ri = r * 0.5;
+  const cx = node.x, cy = node.y;
+  const r  = node.roundaboutRadius;
+  const ri = r * 0.50;
 
   if (node.isMainRoundabout) {
     // ══ BUNDARAN UTAMA: lebih besar, ada air mancur ══
@@ -1096,7 +897,7 @@ function drawRoundabout(node, col) {
     midpointCircle(cx, cy, r - 2, col.roadSurf, true);
 
     // Border luar
-    midpointCircle(cx, cy, r, col.road, false);
+    midpointCircle(cx, cy, r,     col.road, false);
     midpointCircle(cx, cy, r + 1, col.road, false);
     midpointCircle(cx, cy, r + 2, col.sidewalk, false);
 
@@ -1109,49 +910,36 @@ function drawRoundabout(node, col) {
     const NTREE = 8;
     for (let k = 0; k < NTREE; k++) {
       const ang = (k / NTREE) * Math.PI * 2;
-      const tx = Math.round(cx + Math.cos(ang) * ri * 0.65);
-      const ty = Math.round(cy + Math.sin(ang) * ri * 0.65);
+      const tx  = Math.round(cx + Math.cos(ang) * ri * 0.65);
+      const ty  = Math.round(cy + Math.sin(ang) * ri * 0.65);
       midpointCircle(tx, ty, treeR, col.parkTree, true);
-      midpointCircle(
-        tx,
-        ty,
-        Math.max(2, Math.round(treeR * 0.5)),
-        col.parkGround,
-        true,
-      );
+      midpointCircle(tx, ty, Math.max(2, Math.round(treeR * 0.5)),
+                     col.parkGround, true);
     }
 
     // Air mancur di tengah
-    const fr = Math.max(6, Math.round(ri * 0.3));
+    const fr = Math.max(6, Math.round(ri * 0.30));
     midpointCircle(cx, cy, fr, col.water, true);
-    midpointCircle(
-      cx,
-      cy,
-      Math.max(3, Math.round(fr * 0.55)),
-      col.waterShine,
-      true,
-    );
-    midpointCircle(cx, cy, Math.max(2, Math.round(fr * 0.25)), "#ffffff", true);
+    midpointCircle(cx, cy, Math.max(3, Math.round(fr * 0.55)),
+                   col.waterShine, true);
+    midpointCircle(cx, cy, Math.max(2, Math.round(fr * 0.25)),
+                   '#ffffff', true);
 
     // Marka putus-putus di bundaran
-    midpointCircle(cx, cy, Math.round(r * 0.8), "rgba(255,255,255,0.3)", false);
+    midpointCircle(cx, cy, Math.round(r * 0.80), 'rgba(255,255,255,0.3)', false);
+
   } else {
     // ══ BUNDARAN KECIL biasa ══
     midpointCircle(cx, cy, r, col.road, true);
     midpointCircle(cx, cy, r - 1, col.roadSurf, true);
-    midpointCircle(cx, cy, r, col.road, false);
+    midpointCircle(cx, cy, r,     col.road, false);
     midpointCircle(cx, cy, r + 1, col.sidewalk, false);
     midpointCircle(cx, cy, ri, col.park, true);
     midpointCircle(cx, cy, ri, col.road, false);
     const treeR = Math.max(3, Math.round(ri * 0.42));
     midpointCircle(cx, cy, treeR, col.parkTree, true);
-    midpointCircle(
-      cx,
-      cy,
-      Math.max(2, Math.round(treeR * 0.45)),
-      col.parkGround,
-      true,
-    );
+    midpointCircle(cx, cy, Math.max(2, Math.round(treeR * 0.45)),
+                   col.parkGround, true);
   }
 }
 
@@ -1174,43 +962,43 @@ function generateCityBlocks(cols, rows, gw, gh) {
 
       const cellCX = (n00.x + n01.x + n10.x + n11.x) / 4;
       const cellCY = (n00.y + n01.y + n10.y + n11.y) / 4;
-      const cellW = Math.abs(n01.x - n00.x);
-      const cellH = Math.abs(n10.y - n00.y);
+      const cellW  = Math.abs(n01.x - n00.x);
+      const cellH  = Math.abs(n10.y - n00.y);
 
       // Margin lebih besar di dekat bundaran utama
       const isNearCenter =
         (r === centerR - 1 || r === centerR) &&
         (c === centerC - 1 || c === centerC);
-      const margin = isNearCenter ? 0.5 : 0.38;
-      const maxW = cellW * (1 - margin * 2);
-      const maxH = cellH * (1 - margin * 2);
+      const margin = isNearCenter ? 0.50 : 0.38;
+      const maxW   = cellW * (1 - margin * 2);
+      const maxH   = cellH * (1 - margin * 2);
 
       if (maxW < 24 || maxH < 24) continue;
 
       // Pojok peta = taman luas
       const isCorner =
-        (r === 0 || r === rows - 2) && (c === 0 || c === cols - 2);
+        (r === 0 || r === rows - 2) &&
+        (c === 0 || c === cols - 2);
 
       let type;
       if (isCorner) {
-        type = "park"; // pojok selalu taman
+        type = 'park'; // pojok selalu taman
       } else {
         const t = rngType();
-        type = t < 0.55 ? "building" : t < 0.8 ? "park" : "water";
+        type = t < 0.55 ? 'building' : t < 0.80 ? 'park' : 'water';
       }
 
-      const bw = maxW * (0.55 + rngSize() * 0.3);
-      const bh = maxH * (0.55 + rngSize() * 0.3);
+      const bw = maxW * (0.55 + rngSize() * 0.30);
+      const bh = maxH * (0.55 + rngSize() * 0.30);
 
       cityBlocks.push({
         type,
         x: cellCX - bw / 2,
         y: cellCY - bh / 2,
-        w: bw,
-        h: bh,
-        floors: 1 + Math.floor(rngSize() * 5),
+        w: bw, h: bh,
+        floors:    1 + Math.floor(rngSize() * 5),
         treeCount: 2 + Math.floor(rngTree() * 4),
-        treeSeed: Math.floor(rngTree() * 99999),
+        treeSeed:  Math.floor(rngTree() * 99999),
       });
     }
   }
@@ -1218,59 +1006,44 @@ function generateCityBlocks(cols, rows, gw, gh) {
 
 function generateBuildingCluster(cx, cy, maxW, maxH, count, rngSize, rngOff) {
   if (count === 1) {
-    const bw = maxW * (0.35 + rngSize() * 0.3); // max 65% maxW
-    const bh = maxH * (0.35 + rngSize() * 0.3);
+    const bw = maxW * (0.35 + rngSize() * 0.30);  // max 65% maxW
+    const bh = maxH * (0.35 + rngSize() * 0.30);
     const floors = rndInt(1, 6);
     cityBlocks.push({
-      type: "building",
+      type: 'building',
       x: cx - bw / 2,
       y: cy - bh / 2,
-      w: bw,
-      h: bh,
+      w: bw, h: bh,
       floors,
     });
   } else if (count === 2) {
     // Dua bangunan bersebelahan horizontal atau vertikal
-    const horiz = rngSize() > 0.5;
-    const gap = 8;
-    const bw = ((maxW - gap) / (horiz ? 2 : 1)) * (0.6 + rngSize() * 0.3);
-    const bh = ((maxH - gap) / (horiz ? 1 : 2)) * (0.6 + rngSize() * 0.3);
+    const horiz  = rngSize() > 0.5;
+    const gap    = 8;
+    const bw     = (maxW - gap) / (horiz ? 2 : 1) * (0.6 + rngSize() * 0.3);
+    const bh     = (maxH - gap) / (horiz ? 1 : 2) * (0.6 + rngSize() * 0.3);
     const offsets = horiz
-      ? [
-          [-bw / 2 - gap / 2, -bh / 2],
-          [gap / 2, -bh / 2],
-        ]
-      : [
-          [-bw / 2, -bh / 2 - gap / 2],
-          [-bw / 2, gap / 2],
-        ];
+      ? [[-bw / 2 - gap / 2, -bh / 2], [gap / 2, -bh / 2]]
+      : [[-bw / 2, -bh / 2 - gap / 2], [-bw / 2, gap / 2]];
     for (const [ox, oy] of offsets) {
       cityBlocks.push({
-        type: "building",
-        x: cx + ox,
-        y: cy + oy,
-        w: bw,
-        h: bh,
+        type: 'building',
+        x: cx + ox, y: cy + oy,
+        w: bw, h: bh,
         floors: rndInt(1, 5),
       });
     }
   } else {
     // Empat bangunan membentuk blok kota (2x2)
     const gap = 10;
-    const bw = ((maxW - gap) / 2) * (0.65 + rngSize() * 0.2);
-    const bh = ((maxH - gap) / 2) * (0.65 + rngSize() * 0.2);
-    for (const [ox, oy] of [
-      [-1, -1],
-      [1, -1],
-      [-1, 1],
-      [1, 1],
-    ]) {
+    const bw  = (maxW - gap) / 2 * (0.65 + rngSize() * 0.2);
+    const bh  = (maxH - gap) / 2 * (0.65 + rngSize() * 0.2);
+    for (const [ox, oy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
       cityBlocks.push({
-        type: "building",
+        type: 'building',
         x: cx + ox * (bw / 2 + gap / 2) - bw / 2,
         y: cy + oy * (bh / 2 + gap / 2) - bh / 2,
-        w: bw,
-        h: bh,
+        w: bw, h: bh,
         floors: rndInt(1, 8),
       });
     }
@@ -1281,19 +1054,19 @@ function generateBuildingCluster(cx, cy, maxW, maxH, count, rngSize, rngOff) {
 function randomPositions() {
   const idxs = shuffle(nodes.map((_, i) => i));
   startNode = idxs[0];
-  endNode = idxs[1];
+  endNode   = idxs[1];
   computePath();
-  animT = 0;
+  animT       = 0;
   animRunning = false;
-  animPaused = false;
+  animPaused  = false;
   resetButtons();
-  selectedType = document.getElementById("obj-select").value;
+  selectedType = document.getElementById('obj-select').value;
   movingObj = {
-    type: selectedType,
-    x: nodes[startNode].x,
-    y: nodes[startNode].y,
-    angle: 0,
-    colorIdx: Math.floor(Math.random() * 4), // warna tetap selama perjalanan
+    type:     selectedType,
+    x:        nodes[startNode].x,
+    y:        nodes[startNode].y,
+    angle:    0,
+    colorIdx: Math.floor(Math.random() * 4),  // warna tetap selama perjalanan
   };
 }
 
@@ -1380,9 +1153,9 @@ function computePath() {
 
       if (g_baru < g[neighbor]) {
         // Jalur baru ini lebih baik → update
-        prev[neighbor] = current;
-        g[neighbor] = g_baru;
-        f[neighbor] = g_baru + heuristic(nodes[neighbor], nodes[endNode]);
+        prev[neighbor]  = current;
+        g[neighbor]     = g_baru;
+        f[neighbor]     = g_baru + heuristic(nodes[neighbor], nodes[endNode]);
 
         // Tambahkan ke openSet jika belum ada
         const alreadyIn = openSet.some(([, idx]) => idx === neighbor);
@@ -1414,8 +1187,8 @@ function computePath() {
 function getEdgeControlPoint(A, B) {
   // Cari edge yang menghubungkan A dan B
   const e = edges.find(
-    (ed) =>
-      (ed.a === A.id && ed.b === B.id) || (ed.a === B.id && ed.b === A.id),
+    ed => (ed.a === A.id && ed.b === B.id) ||
+          (ed.a === B.id && ed.b === A.id)
   );
   if (e) return getEdgeCP(e);
   // Fallback: midpoint (tidak melengkung)
@@ -1430,20 +1203,19 @@ function buildPathPts() {
     const B = nodes[path[i + 1]];
 
     if (B.isRoundabout && i + 2 < path.length) {
-      const C = nodes[path[i + 2]];
-      const cx = B.x,
-        cy = B.y;
-      const r = B.roundaboutRadius;
+      const C  = nodes[path[i + 2]];
+      const cx = B.x, cy = B.y;
+      const r  = B.roundaboutRadius;
 
       // Sudut arah datang (A ke B) dan arah pergi (B ke C)
-      const dirIn = Math.atan2(B.y - A.y, B.x - A.x); // arah masuk
-      const dirOut = Math.atan2(C.y - B.y, C.x - B.x); // arah keluar
+      const dirIn  = Math.atan2(B.y - A.y, B.x - A.x);  // arah masuk
+      const dirOut = Math.atan2(C.y - B.y, C.x - B.x);  // arah keluar
 
       // Sudut relatif: berapa derajat harus belok
       // Positif = searah jarum jam (kanan), Negatif = berlawanan (kiri)
       let relAngle = dirOut - dirIn;
       // Normalkan ke range (-PI, PI]
-      while (relAngle > Math.PI) relAngle -= Math.PI * 2;
+      while (relAngle >  Math.PI) relAngle -= Math.PI * 2;
       while (relAngle < -Math.PI) relAngle += Math.PI * 2;
 
       // LOGIKA GMAPS:
@@ -1460,29 +1232,30 @@ function buildPathPts() {
         for (let t = 0; t <= 1; t += 0.02) {
           const u = 1 - t;
           pathPts.push({
-            x: u * u * A.x + 2 * u * t * cp1.x + t * t * B.x,
-            y: u * u * A.y + 2 * u * t * cp1.y + t * t * B.y,
+            x: u*u*A.x + 2*u*t*cp1.x + t*t*B.x,
+            y: u*u*A.y + 2*u*t*cp1.y + t*t*B.y,
           });
         }
         const cp2 = getEdgeControlPoint(B, C, i + 1);
         for (let t = 0; t <= 1; t += 0.02) {
           const u = 1 - t;
           pathPts.push({
-            x: u * u * B.x + 2 * u * t * cp2.x + t * t * C.x,
-            y: u * u * B.y + 2 * u * t * cp2.y + t * t * C.y,
+            x: u*u*B.x + 2*u*t*cp2.x + t*t*C.x,
+            y: u*u*B.y + 2*u*t*cp2.y + t*t*C.y,
           });
         }
+
       } else {
         // ── BELOK KANAN / LURUS: Putar bundaran searah jarum jam ──
         // Sudut dari pusat bundaran ke titik masuk dan keluar
-        const angleIn = Math.atan2(A.y - cy, A.x - cx);
+        const angleIn  = Math.atan2(A.y - cy, A.x - cx);
         const angleOut = Math.atan2(C.y - cy, C.x - cx);
 
         // Titik masuk & keluar di tepi bundaran
-        const entryX = cx + Math.cos(angleIn) * r;
-        const entryY = cy + Math.sin(angleIn) * r;
-        const exitX = cx + Math.cos(angleOut) * r;
-        const exitY = cy + Math.sin(angleOut) * r;
+        const entryX = cx + Math.cos(angleIn)  * r;
+        const entryY = cy + Math.sin(angleIn)  * r;
+        const exitX  = cx + Math.cos(angleOut) * r;
+        const exitY  = cy + Math.sin(angleOut) * r;
 
         // Bezier A → entry bundaran
         // Gunakan edge A→B asli sebagai referensi kurva
@@ -1491,16 +1264,16 @@ function buildPathPts() {
         for (let t = 0; t <= 1; t += 0.025) {
           const u = 1 - t;
           pathPts.push({
-            x: u * u * A.x + 2 * u * t * cpAB.x + t * t * entryX,
-            y: u * u * A.y + 2 * u * t * cpAB.y + t * t * entryY,
+            x: u*u*A.x + 2*u*t*cpAB.x + t*t*entryX,
+            y: u*u*A.y + 2*u*t*cpAB.y + t*t*entryY,
           });
         }
 
         // Arc bundaran searah jarum jam dari angleIn ke angleOut
         let sweep = angleOut - angleIn;
-        if (sweep <= 0) sweep += Math.PI * 2; // pastikan searah jarum jam
+        if (sweep <= 0) sweep += Math.PI * 2;  // pastikan searah jarum jam
         sweep = Math.min(sweep, Math.PI * 1.5); // max 270 derajat
-        if (sweep < 0.3) sweep = 0.3; // min arc agar terlihat
+        if (sweep < 0.3) sweep = 0.3;           // min arc agar terlihat
 
         const steps = Math.max(10, Math.round(sweep * 12));
         for (let k = 0; k <= steps; k++) {
@@ -1517,21 +1290,22 @@ function buildPathPts() {
         for (let t = 0; t <= 1; t += 0.025) {
           const u = 1 - t;
           pathPts.push({
-            x: u * u * exitX + 2 * u * t * cpBC.x + t * t * C.x,
-            y: u * u * exitY + 2 * u * t * cpBC.y + t * t * C.y,
+            x: u*u*exitX + 2*u*t*cpBC.x + t*t*C.x,
+            y: u*u*exitY + 2*u*t*cpBC.y + t*t*C.y,
           });
         }
       }
 
-      i += 1; // skip node C karena sudah dihandle
+      i += 1;  // skip node C karena sudah dihandle
+
     } else {
       // Segmen biasa: kurva Bezier kuadratik A → B
       const cp = getEdgeControlPoint(A, B, i);
       for (let t = 0; t <= 1; t += 0.02) {
         const u = 1 - t;
         pathPts.push({
-          x: u * u * A.x + 2 * u * t * cp.x + t * t * B.x,
-          y: u * u * A.y + 2 * u * t * cp.y + t * t * B.y,
+          x: u*u*A.x + 2*u*t*cp.x + t*t*B.x,
+          y: u*u*A.y + 2*u*t*cp.y + t*t*B.y,
         });
       }
     }
@@ -1564,20 +1338,20 @@ function dashedCurve(pts, dashLen, gapLen, color, lineWidth) {
   if (pts.length < 2) return;
 
   ctx.strokeStyle = color;
-  ctx.lineWidth = lineWidth;
-  ctx.lineCap = "round";
+  ctx.lineWidth   = lineWidth;
+  ctx.lineCap     = 'round';
 
-  let drawing = true; // true = sedang gambar dash, false = gap
-  let remaining = dashLen; // sisa panjang fase saat ini
+  let drawing    = true;   // true = sedang gambar dash, false = gap
+  let remaining  = dashLen; // sisa panjang fase saat ini
 
   ctx.beginPath();
   ctx.moveTo(pts[0].x, pts[0].y);
   let penDown = true; // apakah pena sedang menggambar
 
   for (let i = 1; i < pts.length; i++) {
-    const dx = pts[i].x - pts[i - 1].x;
-    const dy = pts[i].y - pts[i - 1].y;
-    let segLen = Math.sqrt(dx * dx + dy * dy);
+    const dx   = pts[i].x - pts[i - 1].x;
+    const dy   = pts[i].y - pts[i - 1].y;
+    let   segLen = Math.sqrt(dx * dx + dy * dy);
     if (segLen === 0) continue;
 
     // Arah vektor satuan segmen ini
@@ -1588,29 +1362,23 @@ function dashedCurve(pts, dashLen, gapLen, color, lineWidth) {
 
     while (traveled < segLen) {
       const step = Math.min(remaining, segLen - traveled);
-      const nx = pts[i - 1].x + ux * (traveled + step);
-      const ny = pts[i - 1].y + uy * (traveled + step);
+      const nx   = pts[i - 1].x + ux * (traveled + step);
+      const ny   = pts[i - 1].y + uy * (traveled + step);
 
       if (drawing) {
-        if (!penDown) {
-          ctx.moveTo(
-            pts[i - 1].x + ux * traveled,
-            pts[i - 1].y + uy * traveled,
-          );
-          penDown = true;
-        }
+        if (!penDown) { ctx.moveTo(pts[i - 1].x + ux * traveled, pts[i - 1].y + uy * traveled); penDown = true; }
         ctx.lineTo(nx, ny);
       } else {
         ctx.moveTo(nx, ny);
         penDown = false;
       }
 
-      traveled += step;
+      traveled  += step;
       remaining -= step;
 
       if (remaining <= 0) {
         // Ganti fase: dash ↔ gap
-        drawing = !drawing;
+        drawing   = !drawing;
         remaining = drawing ? dashLen : gapLen;
       }
     }
@@ -1619,8 +1387,8 @@ function dashedCurve(pts, dashLen, gapLen, color, lineWidth) {
 }
 
 function getEdgeCP(e) {
-  const A = nodes[e.a];
-  const B = nodes[e.b];
+  const A  = nodes[e.a];
+  const B  = nodes[e.b];
   const mx = (A.x + B.x) / 2;
   const my = (A.y + B.y) / 2;
 
@@ -1632,8 +1400,8 @@ function getEdgeCP(e) {
   // Jalan melengkung: geser control point ke samping (tegak lurus)
   // Offset = 25% jarak edge, arah ditentukan dari seed deterministic
   // sehingga konsisten setiap render tanpa simpan state
-  const perp = Math.atan2(B.y - A.y, B.x - A.x) + Math.PI / 2;
-  const dist = Math.hypot(B.x - A.x, B.y - A.y);
+  const perp   = Math.atan2(B.y - A.y, B.x - A.x) + Math.PI / 2;
+  const dist   = Math.hypot(B.x - A.x, B.y - A.y);
   const factor = (((e.a * 31 + e.b * 17) % 100) / 100 - 0.5) * 0.5;
   const offset = dist * factor;
   return {
@@ -1646,11 +1414,11 @@ function getEdgeCP(e) {
 function drawCityBlocks() {
   const col = getColors();
   for (const b of cityBlocks) {
-    if (b.type === "building") {
+    if (b.type === 'building') {
       drawBuilding(b, col);
-    } else if (b.type === "park") {
+    } else if (b.type === 'park') {
       drawPark(b, col);
-    } else if (b.type === "water") {
+    } else if (b.type === 'water') {
       drawWater(b, col);
     }
   }
@@ -1666,25 +1434,22 @@ function drawCityBlocks() {
  */
 function drawBuilding(b, col) {
   const pad = 12; // padding dari tepi blok ke bangunan
-  const x = b.x + pad,
-    y = b.y + pad;
-  const w = b.w - pad * 2,
-    h = b.h - pad * 2;
+  const x = b.x + pad, y = b.y + pad;
+  const w = b.w - pad * 2, h = b.h - pad * 2;
   if (w < 10 || h < 10) return;
   const { floors } = b;
 
   // Warna bangunan bervariasi berdasarkan lantai (biru-abu, merah bata, krem)
   const palette = [
-    ["#8090a8", "#98a8c0"], // biru-abu
-    ["#a08070", "#b09080"], // coklat/bata
-    ["#90a080", "#a0b090"], // hijau-abu
-    ["#b0a070", "#c0b080"], // krem
+    ['#8090a8','#98a8c0'],   // biru-abu
+    ['#a08070','#b09080'],   // coklat/bata
+    ['#90a080','#a0b090'],   // hijau-abu
+    ['#b0a070','#c0b080'],   // krem
   ];
-  const [bodyColor, roofColor] =
-    palette[Math.abs(Math.round(b.x + b.y)) % palette.length];
+  const [bodyColor, roofColor] = palette[Math.abs(Math.round(b.x + b.y)) % palette.length];
 
   // Bayangan bangunan (kesan kedalaman, offset ke kanan-bawah)
-  ctx.fillStyle = "rgba(0,0,0,0.2)";
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
   ctx.fillRect(x + 5, y + 5, w, h);
 
   // Badan bangunan
@@ -1697,8 +1462,8 @@ function drawBuilding(b, col) {
   ctx.fillRect(x, y, w, h);
 
   // Garis tepi bangunan (border tipis)
-  ctx.strokeStyle = "rgba(0,0,0,0.3)";
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+  ctx.lineWidth   = 1;
   ctx.strokeRect(x, y, w, h);
 
   // Atap (strip warna di atas)
@@ -1708,17 +1473,17 @@ function drawBuilding(b, col) {
   // Jendela — grid kecil
   const winCols = Math.max(1, Math.floor(w / 14));
   const winRows = Math.max(1, Math.min(floors, Math.floor(h / 14)));
-  const winW = Math.max(4, (w - 8) / winCols - 3);
-  const winH = Math.max(3, (h - 16) / winRows - 4);
-  const startX = x + 4;
-  const startY = y + Math.max(8, h * 0.12);
+  const winW    = Math.max(4, (w - 8) / winCols - 3);
+  const winH    = Math.max(3, (h - 16) / winRows - 4);
+  const startX  = x + 4;
+  const startY  = y + Math.max(8, h * 0.12);
 
   for (let wr = 0; wr < winRows; wr++) {
     for (let wc = 0; wc < winCols; wc++) {
-      const wx = startX + wc * ((w - 4) / winCols);
-      const wy = startY + wr * ((h - 16) / winRows);
-      const lit = (wr * 7 + wc * 13) % 5 !== 0;
-      ctx.fillStyle = lit ? col.buildingWin : "rgba(0,0,0,0.35)";
+      const wx  = startX + wc * ((w - 4) / winCols);
+      const wy  = startY + wr * ((h - 16) / winRows);
+      const lit = ((wr * 7 + wc * 13) % 5) !== 0;
+      ctx.fillStyle = lit ? col.buildingWin : 'rgba(0,0,0,0.35)';
       ctx.fillRect(wx, wy, winW, winH);
     }
   }
@@ -1735,20 +1500,20 @@ function drawPark(b, col) {
   ctx.fill();
 
   // Border taman
-  ctx.strokeStyle = isDark() ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.10)";
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = isDark() ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.10)';
+  ctx.lineWidth   = 1;
   ctx.stroke();
 
   // Jalur taman (diagonal tipis)
-  ctx.strokeStyle = isDark() ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.07)";
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = isDark() ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.07)';
+  ctx.lineWidth   = 2;
   ctx.beginPath();
   ctx.moveTo(x + w * 0.2, y);
-  ctx.lineTo(x, y + h * 0.2);
+  ctx.lineTo(x,           y + h * 0.2);
   ctx.stroke();
   ctx.beginPath();
   ctx.moveTo(x + w * 0.8, y + h);
-  ctx.lineTo(x + w, y + h * 0.8);
+  ctx.lineTo(x + w,       y + h * 0.8);
   ctx.stroke();
 
   // Pohon-pohon
@@ -1760,16 +1525,11 @@ function drawPark(b, col) {
 
     // Daun pohon (digambar dulu agar batang terlihat di depan)
     midpointCircle(round(tx), round(ty), round(tr), col.parkTree, true);
-    midpointCircle(
-      round(tx - tr * 0.2),
-      round(ty - tr * 0.2),
-      Math.max(1, round(tr * 0.4)),
-      isDark() ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.2)",
-      true,
-    );
+    midpointCircle(round(tx - tr*0.2), round(ty - tr*0.2), Math.max(1,round(tr*0.4)),
+      isDark() ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.2)', true);
 
     // Batang pohon
-    ctx.fillStyle = isDark() ? "#3a2a1a" : "#6a4a2a";
+    ctx.fillStyle = isDark() ? '#3a2a1a' : '#6a4a2a';
     ctx.fillRect(round(tx) - 1.5, round(ty), 3, tr * 0.8);
   }
 }
@@ -1790,20 +1550,18 @@ function drawWater(b, col) {
   ctx.fill();
 
   // Border air
-  ctx.strokeStyle = isDark()
-    ? "rgba(255,255,255,0.08)"
-    : "rgba(255,255,255,0.4)";
-  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = isDark() ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.4)';
+  ctx.lineWidth   = 1.5;
   ctx.stroke();
 
   // Riak air (garis melengkung pendek)
   ctx.strokeStyle = col.waterRipple;
-  ctx.lineWidth = 1;
+  ctx.lineWidth   = 1;
   const rippleCount = Math.max(2, Math.floor(h / 18));
   for (let i = 0; i < rippleCount; i++) {
-    const ry = y + (i + 0.5) * (h / rippleCount);
+    const ry   = y + (i + 0.5) * (h / rippleCount);
     const rLen = w * (0.2 + (i % 3) * 0.1);
-    const rx = x + (w - rLen) / 2;
+    const rx   = x + (w - rLen) / 2;
     ctx.beginPath();
     ctx.moveTo(rx, ry);
     ctx.quadraticCurveTo(rx + rLen / 2, ry - 4, rx + rLen, ry);
@@ -1841,13 +1599,13 @@ function drawWater(b, col) {
 function midpointCircle(cx, cy, r, color, fill = true) {
   cx = Math.round(cx);
   cy = Math.round(cy);
-  r = Math.round(r);
+  r  = Math.round(r);
 
   let x = 0;
   let y = r;
   let p = 1 - r; // decision parameter awal
 
-  ctx.fillStyle = color;
+  ctx.fillStyle   = color;
   ctx.strokeStyle = color;
 
   // Fungsi bantu: gambar 8 titik simetris dari satu titik (x, y)
@@ -1906,49 +1664,29 @@ function midpointCircle(cx, cy, r, color, fill = true) {
 function midpointCircleCtx(cx, cy, r, fillColor, strokeColor) {
   r = Math.round(Math.abs(r));
   if (r < 1) return;
-  let x = 0,
-    y = r,
-    p = 1 - r;
+  let x = 0, y = r, p = 1 - r;
   if (fillColor) {
     ctx.fillStyle = fillColor;
     while (x <= y) {
-      ctx.fillRect(cx - x, cy - y, 2 * x, 1);
-      ctx.fillRect(cx - x, cy + y, 2 * x, 1);
-      ctx.fillRect(cx - y, cy - x, 2 * y, 1);
-      ctx.fillRect(cx - y, cy + x, 2 * y, 1);
-      if (p < 0) {
-        p += 2 * x + 3;
-      } else {
-        y--;
-        p += 2 * x - 2 * y + 5;
-      }
+      ctx.fillRect(cx - x, cy - y, 2*x, 1);
+      ctx.fillRect(cx - x, cy + y, 2*x, 1);
+      ctx.fillRect(cx - y, cy - x, 2*y, 1);
+      ctx.fillRect(cx - y, cy + x, 2*y, 1);
+      if (p < 0) { p += 2*x + 3; }
+      else       { y--; p += 2*x - 2*y + 5; }
       x++;
     }
   }
   if (strokeColor) {
-    x = 0;
-    y = r;
-    p = 1 - r;
+    x = 0; y = r; p = 1 - r;
     ctx.fillStyle = strokeColor;
     while (x <= y) {
-      for (const [px, py] of [
-        [cx + x, cy + y],
-        [cx - x, cy + y],
-        [cx + x, cy - y],
-        [cx - x, cy - y],
-        [cx + y, cy + x],
-        [cx - y, cy + x],
-        [cx + y, cy - x],
-        [cx - y, cy - x],
-      ]) {
+      for (const [px,py] of [[cx+x,cy+y],[cx-x,cy+y],[cx+x,cy-y],[cx-x,cy-y],
+                             [cx+y,cy+x],[cx-y,cy+x],[cx+y,cy-x],[cx-y,cy-x]]) {
         ctx.fillRect(px, py, 1, 1);
       }
-      if (p < 0) {
-        p += 2 * x + 3;
-      } else {
-        y--;
-        p += 2 * x - 2 * y + 5;
-      }
+      if (p < 0) { p += 2*x + 3; }
+      else       { y--; p += 2*x - 2*y + 5; }
       x++;
     }
   }
@@ -1963,16 +1701,16 @@ function midpointCircleCtx(cx, cy, r, fillColor, strokeColor) {
 function drawSidewalks() {
   const col = getColors();
   for (const e of edges) {
-    const A = nodes[e.a];
-    const B = nodes[e.b];
+    const A  = nodes[e.a];
+    const B  = nodes[e.b];
     const cp = getEdgeCP(e);
     ctx.beginPath();
     ctx.moveTo(A.x, A.y);
     ctx.quadraticCurveTo(cp.x, cp.y, B.x, B.y);
     ctx.strokeStyle = col.sidewalk;
-    ctx.lineWidth = 22;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
+    ctx.lineWidth   = 22;
+    ctx.lineCap     = 'round';
+    ctx.lineJoin    = 'round';
     ctx.stroke();
   }
 }
@@ -1981,26 +1719,20 @@ function drawSidewalks() {
 function drawFlag(x, y, color) {
   const s = 1 / zoom;
   ctx.strokeStyle = color;
-  ctx.lineWidth = 2.5 * s;
-  ctx.lineCap = "round";
+  ctx.lineWidth   = 2.5 * s;
+  ctx.lineCap     = 'round';
   ctx.beginPath();
-  ctx.moveTo(x, y - 8 * s);
+  ctx.moveTo(x, y - 8  * s);
   ctx.lineTo(x, y - 38 * s);
   ctx.stroke();
   ctx.fillStyle = color;
   ctx.beginPath();
-  ctx.moveTo(x, y - 38 * s);
+  ctx.moveTo(x,           y - 38 * s);
   ctx.lineTo(x + 18 * s, y - 29 * s);
-  ctx.lineTo(x, y - 20 * s);
+  ctx.lineTo(x,           y - 20 * s);
   ctx.closePath();
   ctx.fill();
-  midpointCircleCtx(
-    Math.round(x),
-    Math.round(y - 8 * s),
-    Math.max(1, Math.round(5 * s)),
-    ctx.fillStyle,
-    null,
-  );
+  midpointCircleCtx(Math.round(x), Math.round(y - 8*s), Math.max(1, Math.round(5*s)), ctx.fillStyle, null);
 }
 
 // ===================== DRAWING: MOVING OBJECT =====================
@@ -2017,158 +1749,118 @@ function drawMovingObj(obj) {
   ctx.rotate(obj.angle);
   const s = 1 / zoom;
 
-  if (obj.type === "car") {
+  if (obj.type === 'car') {
     // Mobil top-down, hidung ke +X
     // Panjang (sumbu X): 22s, Lebar (sumbu Y): 12s
     const carColors = [col.objCar, col.objCar2, col.objCar3, col.objCar4];
-    const cc = carColors[(obj.colorIdx || 0) % 4]; // colorIdx tetap sejak spawn
-    const hl = 11 * s,
-      hw = 6 * s; // half-length, half-width
+    const cc = carColors[(obj.colorIdx || 0) % 4];  // colorIdx tetap sejak spawn
+    const hl = 11*s, hw = 6*s;  // half-length, half-width
 
     // Bayangan (offset kanan-bawah)
-    ctx.fillStyle = "rgba(0,0,0,0.2)";
+    ctx.fillStyle = 'rgba(0,0,0,0.2)';
     ctx.beginPath();
-    if (ctx.roundRect) ctx.roundRect(-hl + s, -hw + s, hl * 2, hw * 2, 3 * s);
-    else ctx.rect(-hl + s, -hw + s, hl * 2, hw * 2);
+    if (ctx.roundRect) ctx.roundRect(-hl+s, -hw+s, hl*2, hw*2, 3*s);
+    else ctx.rect(-hl+s, -hw+s, hl*2, hw*2);
     ctx.fill();
 
     // Bodi
     ctx.fillStyle = cc;
     ctx.beginPath();
-    if (ctx.roundRect) ctx.roundRect(-hl, -hw, hl * 2, hw * 2, 3 * s);
-    else ctx.rect(-hl, -hw, hl * 2, hw * 2);
+    if (ctx.roundRect) ctx.roundRect(-hl, -hw, hl*2, hw*2, 3*s);
+    else ctx.rect(-hl, -hw, hl*2, hw*2);
     ctx.fill();
 
     // Atap gelap (tengah bodi)
-    ctx.fillStyle = "rgba(0,0,0,0.25)";
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
     ctx.beginPath();
-    if (ctx.roundRect)
-      ctx.roundRect(-hl * 0.25, -hw + 1.5 * s, hl * 1.0, hw * 2 - 3 * s, 2 * s);
-    else ctx.rect(-hl * 0.25, -hw + 1.5 * s, hl * 1.0, hw * 2 - 3 * s);
+    if (ctx.roundRect) ctx.roundRect(-hl*0.25, -hw+1.5*s, hl*1.0, hw*2-3*s, 2*s);
+    else ctx.rect(-hl*0.25, -hw+1.5*s, hl*1.0, hw*2-3*s);
     ctx.fill();
 
     // Kaca depan (+X)
-    ctx.fillStyle = "rgba(180,225,255,0.9)";
+    ctx.fillStyle = 'rgba(180,225,255,0.9)';
     ctx.beginPath();
-    if (ctx.roundRect)
-      ctx.roundRect(hl * 0.2, -hw + 2 * s, hl * 0.55, hw * 2 - 4 * s, 2 * s);
-    else ctx.rect(hl * 0.2, -hw + 2 * s, hl * 0.55, hw * 2 - 4 * s);
+    if (ctx.roundRect) ctx.roundRect(hl*0.2, -hw+2*s, hl*0.55, hw*2-4*s, 2*s);
+    else ctx.rect(hl*0.2, -hw+2*s, hl*0.55, hw*2-4*s);
     ctx.fill();
 
     // Kaca belakang (-X)
-    ctx.fillStyle = "rgba(180,225,255,0.55)";
+    ctx.fillStyle = 'rgba(180,225,255,0.55)';
     ctx.beginPath();
-    if (ctx.roundRect)
-      ctx.roundRect(
-        -hl * 0.75,
-        -hw + 2 * s,
-        hl * 0.35,
-        hw * 2 - 4 * s,
-        1.5 * s,
-      );
-    else ctx.rect(-hl * 0.75, -hw + 2 * s, hl * 0.35, hw * 2 - 4 * s);
+    if (ctx.roundRect) ctx.roundRect(-hl*0.75, -hw+2*s, hl*0.35, hw*2-4*s, 1.5*s);
+    else ctx.rect(-hl*0.75, -hw+2*s, hl*0.35, hw*2-4*s);
     ctx.fill();
 
     // 4 roda (sudut bodi)
-    const rL = 4 * s,
-      rW = 2.5 * s;
-    for (const [rx, ry] of [
-      [hl * 0.55, -hw - rW / 2], // kanan depan atas
-      [hl * 0.55, hw - rL + rW / 2], // kanan depan bawah
-      [-hl * 0.7, -hw - rW / 2], // kiri belakang atas
-      [-hl * 0.7, hw - rL + rW / 2], // kiri belakang bawah
+    const rL = 4*s, rW = 2.5*s;
+    for (const [rx,ry] of [
+      [ hl*0.55, -hw-rW/2],   // kanan depan atas
+      [ hl*0.55,  hw-rL+rW/2],// kanan depan bawah
+      [-hl*0.7,  -hw-rW/2],   // kiri belakang atas
+      [-hl*0.7,   hw-rL+rW/2],// kiri belakang bawah
     ]) {
-      ctx.fillStyle = "#111";
-      ctx.fillRect(rx, ry, rL, rW);
-      ctx.fillStyle = "#444";
-      ctx.fillRect(rx + 0.8 * s, ry + 0.5 * s, rL - 1.6 * s, rW - 1 * s);
+      ctx.fillStyle = '#111'; ctx.fillRect(rx, ry, rL, rW);
+      ctx.fillStyle = '#444'; ctx.fillRect(rx+0.8*s, ry+0.5*s, rL-1.6*s, rW-1*s);
     }
 
     // Lampu depan kuning (+X)
-    ctx.fillStyle = "#FFE055";
-    ctx.fillRect(hl - 1 * s, -hw + 0.5 * s, 2 * s, 2 * s);
-    ctx.fillRect(hl - 1 * s, hw - 2.5 * s, 2 * s, 2 * s);
+    ctx.fillStyle = '#FFE055';
+    ctx.fillRect(hl-1*s, -hw+0.5*s, 2*s, 2*s);
+    ctx.fillRect(hl-1*s,  hw-2.5*s, 2*s, 2*s);
 
     // Lampu belakang merah (-X)
-    ctx.fillStyle = "#FF2020";
-    ctx.fillRect(-hl - 1 * s, -hw + 0.5 * s, 2 * s, 2 * s);
-    ctx.fillRect(-hl - 1 * s, hw - 2.5 * s, 2 * s, 2 * s);
-  } else if (obj.type === "moto") {
+    ctx.fillStyle = '#FF2020';
+    ctx.fillRect(-hl-1*s, -hw+0.5*s, 2*s, 2*s);
+    ctx.fillRect(-hl-1*s,  hw-2.5*s, 2*s, 2*s);
+
+  } else if (obj.type === 'moto') {
     // Motor, hidung ke +X, panjang 18s lebar 7s
     ctx.fillStyle = col.objMoto;
     ctx.beginPath();
-    if (ctx.roundRect) ctx.roundRect(-9 * s, -3.5 * s, 18 * s, 7 * s, 2.5 * s);
-    else ctx.rect(-9 * s, -3.5 * s, 18 * s, 7 * s);
+    if (ctx.roundRect) ctx.roundRect(-9*s, -3.5*s, 18*s, 7*s, 2.5*s);
+    else ctx.rect(-9*s, -3.5*s, 18*s, 7*s);
     ctx.fill();
     // Roda depan dan belakang
-    ctx.fillStyle = "#111";
+    ctx.fillStyle = '#111';
     ctx.beginPath();
-    if (ctx.roundRect) ctx.roundRect(6 * s, -3 * s, 5 * s, 6 * s, 1.5 * s);
-    else ctx.rect(6 * s, -3 * s, 5 * s, 6 * s);
+    if (ctx.roundRect) ctx.roundRect(6*s, -3*s, 5*s, 6*s, 1.5*s);
+    else ctx.rect(6*s, -3*s, 5*s, 6*s);
     ctx.fill();
     ctx.beginPath();
-    if (ctx.roundRect) ctx.roundRect(-11 * s, -3 * s, 5 * s, 6 * s, 1.5 * s);
-    else ctx.rect(-11 * s, -3 * s, 5 * s, 6 * s);
+    if (ctx.roundRect) ctx.roundRect(-11*s, -3*s, 5*s, 6*s, 1.5*s);
+    else ctx.rect(-11*s, -3*s, 5*s, 6*s);
     ctx.fill();
     // Helm pengendara
-    midpointCircleCtx(0, 0, Math.max(1, Math.round(3.5 * s)), "#eecc44", null);
-  } else if (obj.type === "bike") {
+    midpointCircleCtx(0, 0, Math.max(1, Math.round(3.5*s)), '#eecc44', null);
+
+  } else if (obj.type === 'bike') {
     // Sepeda, hidung ke +X
     ctx.strokeStyle = col.objBike;
-    ctx.lineWidth = 1.8 * s;
-    ctx.lineCap = "round";
+    ctx.lineWidth   = 1.8*s;
+    ctx.lineCap     = 'round';
     // Rangka
-    ctx.beginPath();
-    ctx.moveTo(-8 * s, 0);
-    ctx.lineTo(8 * s, 0);
-    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-8*s,0); ctx.lineTo(8*s,0); ctx.stroke();
     // Roda depan & belakang
-    midpointCircleCtx(
-      Math.round(7 * s),
-      0,
-      Math.max(1, Math.round(4.5 * s)),
-      null,
-      col.objBike,
-    );
-    midpointCircleCtx(
-      Math.round(-7 * s),
-      0,
-      Math.max(1, Math.round(4.5 * s)),
-      null,
-      col.objBike,
-    );
+    midpointCircleCtx(Math.round(7*s), 0, Math.max(1, Math.round(4.5*s)), null, col.objBike);
+    midpointCircleCtx(Math.round(-7*s), 0, Math.max(1, Math.round(4.5*s)), null, col.objBike);
     // Setang depan
-    ctx.beginPath();
-    ctx.moveTo(7 * s, -3.5 * s);
-    ctx.lineTo(7 * s, 3.5 * s);
-    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(7*s,-3.5*s); ctx.lineTo(7*s,3.5*s); ctx.stroke();
     // Pengendara
-    midpointCircleCtx(0, 0, Math.max(1, Math.round(3 * s)), col.objBike, null);
+    midpointCircleCtx(0, 0, Math.max(1, Math.round(3*s)), col.objBike, null);
+
   } else {
     // Pejalan kaki, hidung ke +X
-    ctx.fillStyle = "rgba(0,0,0,0.18)";
-    ctx.beginPath();
-    ctx.ellipse(1.5 * s, 0, 4.5 * s, 3 * s, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    ctx.beginPath(); ctx.ellipse(1.5*s, 0, 4.5*s, 3*s, 0, 0, Math.PI*2); ctx.fill();
     // Tubuh
-    midpointCircleCtx(0, 0, Math.max(1, Math.round(4 * s)), col.objPed, null);
+    midpointCircleCtx(0, 0, Math.max(1, Math.round(4*s)), col.objPed, null);
     // Kepala (sisi +X)
-    midpointCircleCtx(
-      Math.round(2.5 * s),
-      0,
-      Math.max(1, Math.round(2.5 * s)),
-      "#f5c8a0",
-      null,
-    );
+    midpointCircleCtx(Math.round(2.5*s), 0, Math.max(1, Math.round(2.5*s)), '#f5c8a0', null);
     // Kaki (animasi atas-bawah)
-    const step = Math.sin(animT * 0.3) * 3 * s;
+    const step = Math.sin(animT * 0.3) * 3*s;
     ctx.fillStyle = col.objPed;
-    ctx.beginPath();
-    ctx.ellipse(-2 * s, -step, 1.5 * s, 2.8 * s, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(-2 * s, step, 1.5 * s, 2.8 * s, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.beginPath(); ctx.ellipse(-2*s, -step, 1.5*s, 2.8*s, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(-2*s,  step, 1.5*s, 2.8*s, 0, 0, Math.PI*2); ctx.fill();
   }
 
   ctx.restore();
@@ -2190,8 +1882,8 @@ function drawMap() {
   // Setiap garis grid adalah garis lurus horisontal/vertikal
   // yang ideal untuk mendemonstrasikan Bresenham pada sumbu tunggal.
   const gs = 100 * zoom;
-  const ox = (-camX * zoom + W / 2) % gs;
-  const oy = (-camY * zoom + H / 2) % gs;
+  const ox = ((-camX * zoom) + W / 2) % gs;
+  const oy = ((-camY * zoom) + H / 2) % gs;
   const gridColor = col.grid;
   // Bresenham bekerja di ruang piksel integer — bulatkan koordinat awal
   for (let x = ox; x < W; x += gs) {
@@ -2208,17 +1900,17 @@ function drawMap() {
   ctx.translate(-camX, -camY);
 
   // 1. Trotoar lebar di kiri-kanan jalan (digambar paling bawah)
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
+  ctx.lineCap  = 'round';
+  ctx.lineJoin = 'round';
   for (const e of edges) {
-    const A = nodes[e.a];
-    const B = nodes[e.b];
+    const A  = nodes[e.a];
+    const B  = nodes[e.b];
     const cp = getEdgeCP(e);
     ctx.beginPath();
     ctx.moveTo(A.x, A.y);
     ctx.quadraticCurveTo(cp.x, cp.y, B.x, B.y);
     ctx.strokeStyle = col.sidewalk;
-    ctx.lineWidth = 34;
+    ctx.lineWidth   = 34;
     ctx.stroke();
   }
 
@@ -2227,36 +1919,36 @@ function drawMap() {
 
   // 3. Border aspal gelap (tepi jalan)
   for (const e of edges) {
-    const A = nodes[e.a];
-    const B = nodes[e.b];
+    const A  = nodes[e.a];
+    const B  = nodes[e.b];
     const cp = getEdgeCP(e);
     ctx.beginPath();
     ctx.moveTo(A.x, A.y);
     ctx.quadraticCurveTo(cp.x, cp.y, B.x, B.y);
     ctx.strokeStyle = col.road;
-    ctx.lineWidth = 26;
+    ctx.lineWidth   = 26;
     ctx.stroke();
   }
 
   // 4. Permukaan aspal (lebih terang)
   for (const e of edges) {
-    const A = nodes[e.a];
-    const B = nodes[e.b];
+    const A  = nodes[e.a];
+    const B  = nodes[e.b];
     const cp = getEdgeCP(e);
     ctx.beginPath();
     ctx.moveTo(A.x, A.y);
     ctx.quadraticCurveTo(cp.x, cp.y, B.x, B.y);
     ctx.strokeStyle = col.roadSurf;
-    ctx.lineWidth = 20;
+    ctx.lineWidth   = 20;
     ctx.stroke();
   }
 
   // 5. Marka garis tengah jalan (putus-putus) — dashedCurve() manual
   // Sampling t += 0.02 (50 titik) agar mengikuti kurva dengan mulus
   for (const e of edges) {
-    const A = nodes[e.a];
-    const B = nodes[e.b];
-    const cp = getEdgeCP(e);
+    const A   = nodes[e.a];
+    const B   = nodes[e.b];
+    const cp  = getEdgeCP(e);
     const pts = [];
     for (let t = 0; t <= 1; t += 0.02) {
       const u = 1 - t;
@@ -2267,11 +1959,11 @@ function drawMap() {
     }
     // Ukuran dash proporsional: jalan lurus dash lebih panjang
     const dashLen = e.curved ? 8 : 12;
-    const gapLen = e.curved ? 8 : 12;
+    const gapLen  = e.curved ? 8 : 12;
     dashedCurve(pts, dashLen, gapLen, col.roadMark, 2);
   }
 
-  // 6. Highlight jalur A* — menggunakan dashedCurve() manual
+    // 6. Highlight jalur A* — menggunakan dashedCurve() manual
   if (pathPts.length > 1) {
     ctx.globalAlpha = 0.8;
     dashedCurve(pathPts, 16, 10, col.pathLine, 6);
@@ -2290,10 +1982,12 @@ function drawMap() {
     midpointCircle(n.x, n.y, 10, col.roadSurf, true);
   }
 
-  // 8. Bendera awal & tujuan
-  if (nodes[startNode])
-    drawFlag(nodes[startNode].x, nodes[startNode].y, col.flagG);
-  if (nodes[endNode]) drawFlag(nodes[endNode].x, nodes[endNode].y, col.flagR);
+  // 8. Trotoar
+  drawSidewalks();
+
+  // 9. Bendera awal & tujuan
+  if (nodes[startNode]) drawFlag(nodes[startNode].x, nodes[startNode].y, col.flagG);
+  if (nodes[endNode])   drawFlag(nodes[endNode].x,   nodes[endNode].y,   col.flagR);
 
   // 9. Objek bergerak
   if (movingObj) drawMovingObj(movingObj);
@@ -2317,8 +2011,8 @@ function stepAnim() {
   }
   const cur = pathPts[idx];
   const nxt = pathPts[Math.min(idx + 1, pathPts.length - 1)];
-  movingObj.x = cur.x;
-  movingObj.y = cur.y;
+  movingObj.x     = cur.x;
+  movingObj.y     = cur.y;
   movingObj.angle = Math.atan2(nxt.y - cur.y, nxt.x - cur.x);
 }
 
@@ -2326,40 +2020,36 @@ function stepAnim() {
 function clampCam() {
   const hw = W / (2 * zoom);
   const hh = H / (2 * zoom);
-  camX = Math.max(hw, Math.min(MAP_W - hw, camX));
-  camY = Math.max(hh, Math.min(MAP_H - hh, camY));
+  camX = Math.max(hw,         Math.min(MAP_W - hw, camX));
+  camY = Math.max(hh,         Math.min(MAP_H - hh, camY));
 }
 
 function setZoom(z) {
   zoom = Math.max(0.12, Math.min(4, z));
   clampCam();
-  document.getElementById("zoom-label").textContent =
-    Math.round(zoom * 100) + "%";
+  document.getElementById('zoom-label').textContent = Math.round(zoom * 100) + '%';
 }
 
 // ===================== UI HELPERS =====================
 function resetButtons() {
-  document.getElementById("btn-start").style.display = "";
-  document.getElementById("btn-pause").style.display = "none";
-  document.getElementById("btn-pause").textContent = "⏸ Pause";
+  document.getElementById('btn-start').style.display = '';
+  document.getElementById('btn-pause').style.display = 'none';
+  document.getElementById('btn-pause').textContent   = '⏸ Pause';
 }
 
 // ===================== EVENT LISTENERS =====================
-canvas.addEventListener("mousedown", (e) => {
+canvas.addEventListener('mousedown', e => {
   if (is3D) {
     drag3D = true;
     drag3DPan = e.button === 2 || e.altKey;
-    last3DMX = e.clientX;
-    last3DMY = e.clientY;
+    last3DMX = e.clientX; last3DMY = e.clientY;
   } else {
-    dragging = true;
-    lastMX = e.clientX;
-    lastMY = e.clientY;
+    dragging = true; lastMX = e.clientX; lastMY = e.clientY;
   }
-  canvas.classList.add("grabbing");
+  canvas.classList.add('grabbing');
 });
-canvas.addEventListener("contextmenu", (e) => e.preventDefault());
-canvas.addEventListener("mousemove", (e) => {
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+canvas.addEventListener('mousemove', e => {
   if (is3D && drag3D) {
     const dx = e.clientX - last3DMX;
     const dy = e.clientY - last3DMY;
@@ -2373,188 +2063,136 @@ canvas.addEventListener("mousemove", (e) => {
     } else {
       // Orbit: putar kamera
       cam3D.theta -= dx * 0.006;
-      cam3D.phi = Math.max(
-        0.15,
-        Math.min(Math.PI * 0.48, cam3D.phi - dy * 0.006),
-      );
+      cam3D.phi    = Math.max(0.15, Math.min(Math.PI*0.48, cam3D.phi - dy * 0.006));
     }
-    last3DMX = e.clientX;
-    last3DMY = e.clientY;
+    last3DMX = e.clientX; last3DMY = e.clientY;
     return;
   }
   if (!dragging) return;
   camX -= (e.clientX - lastMX) / zoom;
   camY -= (e.clientY - lastMY) / zoom;
+  clampCam(); lastMX = e.clientX; lastMY = e.clientY;
+});
+canvas.addEventListener('mouseup',    () => { dragging = false; drag3D = false; canvas.classList.remove('grabbing'); });
+canvas.addEventListener('mouseleave', () => { dragging = false; drag3D = false; canvas.classList.remove('grabbing'); });
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  if (is3D) {
+    // 3D zoom: ubah jarak kamera (r)
+    const factor = e.deltaY > 0 ? 1.12 : 0.89;
+    cam3D.r = Math.max(300, Math.min(8000, cam3D.r * factor));
+    return;
+  }
+  const delta = e.deltaY > 0 ? -0.08 : 0.08;
+  const rect  = canvas.getBoundingClientRect();
+  const mx    = e.clientX - rect.left;
+  const my    = e.clientY - rect.top;
+  const wx    = (mx - W / 2) / zoom + camX;
+  const wy    = (my - H / 2) / zoom + camY;
+  setZoom(zoom + delta);
+  camX = wx - (mx - W / 2) / zoom;
+  camY = wy - (my - H / 2) / zoom;
   clampCam();
-  lastMX = e.clientX;
-  lastMY = e.clientY;
-});
-canvas.addEventListener("mouseup", () => {
-  dragging = false;
-  drag3D = false;
-  canvas.classList.remove("grabbing");
-});
-canvas.addEventListener("mouseleave", () => {
-  dragging = false;
-  drag3D = false;
-  canvas.classList.remove("grabbing");
-});
+}, { passive: false });
 
-canvas.addEventListener(
-  "wheel",
-  (e) => {
-    e.preventDefault();
-    if (is3D) {
-      // 3D zoom: ubah jarak kamera (r)
-      const factor = e.deltaY > 0 ? 1.12 : 0.89;
-      cam3D.r = Math.max(300, Math.min(8000, cam3D.r * factor));
-      return;
-    }
-    const delta = e.deltaY > 0 ? -0.08 : 0.08;
-    const rect = canvas.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
-    const wx = (mx - W / 2) / zoom + camX;
-    const wy = (my - H / 2) / zoom + camY;
-    setZoom(zoom + delta);
-    camX = wx - (mx - W / 2) / zoom;
-    camY = wy - (my - H / 2) / zoom;
-    clampCam();
-  },
-  { passive: false },
-);
-
-canvas.addEventListener("touchstart", (e) => {
+canvas.addEventListener('touchstart', e => {
   if (e.touches.length === 1) {
-    dragging = true;
-    lastMX = e.touches[0].clientX;
-    lastMY = e.touches[0].clientY;
+    dragging = true; lastMX = e.touches[0].clientX; lastMY = e.touches[0].clientY;
   }
   if (e.touches.length === 2) {
     lastTouchDist = Math.hypot(
       e.touches[0].clientX - e.touches[1].clientX,
-      e.touches[0].clientY - e.touches[1].clientY,
+      e.touches[0].clientY - e.touches[1].clientY
     );
   }
 });
-canvas.addEventListener(
-  "touchmove",
-  (e) => {
-    e.preventDefault();
-    if (e.touches.length === 1 && dragging) {
-      camX -= (e.touches[0].clientX - lastMX) / zoom;
-      camY -= (e.touches[0].clientY - lastMY) / zoom;
-      clampCam();
-      lastMX = e.touches[0].clientX;
-      lastMY = e.touches[0].clientY;
-    }
-    if (e.touches.length === 2) {
-      const d = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY,
-      );
-      setZoom(zoom * (d / lastTouchDist));
-      lastTouchDist = d;
-    }
-  },
-  { passive: false },
-);
-canvas.addEventListener("touchend", () => {
-  dragging = false;
-});
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (e.touches.length === 1 && dragging) {
+    camX -= (e.touches[0].clientX - lastMX) / zoom;
+    camY -= (e.touches[0].clientY - lastMY) / zoom;
+    clampCam(); lastMX = e.touches[0].clientX; lastMY = e.touches[0].clientY;
+  }
+  if (e.touches.length === 2) {
+    const d = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+    setZoom(zoom * (d / lastTouchDist)); lastTouchDist = d;
+  }
+}, { passive: false });
+canvas.addEventListener('touchend', () => { dragging = false; });
 
-document.getElementById("btn-rand").addEventListener("click", () => {
-  animRunning = false;
-  animPaused = false;
-  resetButtons();
+document.getElementById('btn-rand').addEventListener('click', () => {
+  animRunning = false; animPaused = false; resetButtons();
   generateMap();
-  camX = MAP_W / 2;
-  camY = MAP_H / 2;
+  camX = MAP_W / 2; camY = MAP_H / 2;
   setZoom(0.18);
 });
-document.getElementById("btn-pos").addEventListener("click", () => {
-  animRunning = false;
-  animPaused = false;
-  resetButtons();
+document.getElementById('btn-pos').addEventListener('click', () => {
+  animRunning = false; animPaused = false; resetButtons();
   randomPositions();
 });
-document
-  .getElementById("btn-zi")
-  .addEventListener("click", () => setZoom(zoom + 0.08));
-document
-  .getElementById("btn-zo")
-  .addEventListener("click", () => setZoom(zoom - 0.08));
+document.getElementById('btn-zi').addEventListener('click', () => setZoom(zoom + 0.08));
+document.getElementById('btn-zo').addEventListener('click', () => setZoom(zoom - 0.08));
 
-document.getElementById("btn-start").addEventListener("click", () => {
-  selectedType = document.getElementById("obj-select").value;
-  animT = 0;
-  animRunning = true;
-  animPaused = false;
+document.getElementById('btn-start').addEventListener('click', () => {
+  selectedType = document.getElementById('obj-select').value;
+  animT        = 0;
+  animRunning  = true;
+  animPaused   = false;
   movingObj = {
-    type: selectedType,
-    x: pathPts[0] ? pathPts[0].x : nodes[startNode].x,
-    y: pathPts[0] ? pathPts[0].y : nodes[startNode].y,
-    angle: 0,
-    colorIdx: Math.floor(Math.random() * 4), // warna tetap selama perjalanan
+    type:     selectedType,
+    x:        pathPts[0] ? pathPts[0].x : nodes[startNode].x,
+    y:        pathPts[0] ? pathPts[0].y : nodes[startNode].y,
+    angle:    0,
+    colorIdx: Math.floor(Math.random() * 4),  // warna tetap selama perjalanan
   };
-  document.getElementById("btn-start").style.display = "none";
-  document.getElementById("btn-pause").style.display = "";
+  document.getElementById('btn-start').style.display = 'none';
+  document.getElementById('btn-pause').style.display = '';
 });
 
-document.getElementById("btn-pause").addEventListener("click", () => {
+document.getElementById('btn-pause').addEventListener('click', () => {
   animPaused = !animPaused;
-  document.getElementById("btn-pause").textContent = animPaused
-    ? "▶ Resume"
-    : "⏸ Pause";
-  const sp2 = document.getElementById("status-text");
-  if (sp2) sp2.textContent = animPaused ? "Dijeda" : "Animasi berjalan";
-  const sd2 = document.querySelector(".status-dot");
-  if (sd2) sd2.style.background = animPaused ? "#d97706" : "#2563eb";
+  document.getElementById('btn-pause').textContent = animPaused ? '▶ Resume' : '⏸ Pause';
+  const sp2 = document.getElementById('status-text');
+  if (sp2) sp2.textContent = animPaused ? 'Dijeda' : 'Animasi berjalan';
+  const sd2 = document.querySelector('.status-dot');
+  if (sd2) sd2.style.background = animPaused ? '#d97706' : '#2563eb';
 });
 
 // Toggle 2D/3D
-document.getElementById("btn-3d").addEventListener("click", () => {
+document.getElementById('btn-3d').addEventListener('click', () => {
   is3D = !is3D;
-  const btn = document.getElementById("btn-3d");
-  const info2d = document.getElementById("info");
-  const info3d = document.getElementById("info3d");
+  const btn = document.getElementById('btn-3d');
+  const info2d = document.getElementById('info');
+  const info3d = document.getElementById('info3d');
   if (is3D) {
-    btn.classList.add("active");
-    btn.textContent = "🧊 Mode 2D";
-    info2d.style.display = "none";
-    info3d.style.display = "";
+    btn.classList.add('active');
+    btn.textContent = '🧊 Mode 2D';
+    info2d.style.display = 'none';
+    info3d.style.display = '';
     // Reset orbit camera ke posisi awal
     cam3D.theta = -Math.PI / 4;
-    cam3D.phi = Math.PI / 3;
-    cam3D.r = 3200;
-    cam3D.tx = 0;
-    cam3D.tz = 0;
+    cam3D.phi   = Math.PI / 3;
+    cam3D.r     = 3200;
+    cam3D.tx    = 0;
+    cam3D.tz    = 0;
   } else {
-    btn.classList.remove("active");
-    btn.textContent = "🧊 Mode 3D";
-    info2d.style.display = "";
-    info3d.style.display = "none";
+    btn.classList.remove('active');
+    btn.textContent = '🧊 Mode 3D';
+    info2d.style.display = '';
+    info3d.style.display = 'none';
   }
 });
 
-window.addEventListener("resize", () => {
-  W = window.innerWidth;
-  H = window.innerHeight;
-  canvas.width = W;
-  canvas.height = H;
+window.addEventListener('resize', () => {
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = W; canvas.height = H;
 });
 
-// ===================== MAIN LOOP =====================
-function loop() {
-  stepAnim();
-  if (is3D) drawMap3D();
-  else drawMap();
-  requestAnimationFrame(loop);
-}
+// =====================================================================
+// Fitur tambahan akan ditambahkan di bawah oleh masing-masing anggota
+// =====================================================================
 
-// ===================== INIT =====================
-generateMap();
-camX = MAP_W / 2;
-camY = MAP_H / 2;
-setZoom(0.18);
-loop();
