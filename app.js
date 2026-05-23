@@ -2767,3 +2767,93 @@ function addDiagonalEdges(cols, rows, probability = 0.35) {
 
 // =====================================================================
 // FITUR AMAA: TRAFFIC DENSITY HEATMAP — HSL color mapping
+// hue = lerp(120°, 0°, t) → hijau (sepi) ke merah (padat)
+// =====================================================================
+
+let showHeatmap = false;
+
+function lerpColor(hue1, hue2, t) {
+  const hue = hue1 + t * (hue2 - hue1);
+  return `hsl(${hue.toFixed(1)}, 80%, 50%)`;
+}
+
+function drawTrafficHeatmap() {
+  if (!showHeatmap || is3D) return;
+  const degrees = nodes.map(n => n.adj.length);
+  const minDeg  = Math.min(...degrees);
+  const maxDeg  = Math.max(...degrees);
+  const range   = maxDeg - minDeg || 1;
+
+  ctx.save();
+  ctx.translate(W / 2, H / 2);
+  ctx.scale(zoom, zoom);
+  ctx.translate(-camX, -camY);
+
+  for (const n of nodes) {
+    const t     = (n.adj.length - minDeg) / range;
+    const color = lerpColor(120, 0, t);
+    const r     = 18 + t * 14;
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = color.replace('hsl', 'hsla').replace(')', ', 0.45)');
+    ctx.fill();
+    ctx.fillStyle    = '#fff';
+    ctx.font         = `bold ${Math.round(9 / zoom * 2)}px sans-serif`;
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(n.adj.length, n.x, n.y);
+  }
+  ctx.restore();
+  ctx.textAlign    = 'left';
+  ctx.textBaseline = 'alphabetic';
+}
+
+
+// =====================================================================
+// UI: SPEED SLIDER (Neza) + TOMBOL HEATMAP (Amaa)
+// =====================================================================
+
+window.addEventListener('load', () => {
+  // Speed slider
+  const wrap = document.createElement('div');
+  wrap.id = 'speed-wrap';
+  wrap.style.cssText = `
+    position:absolute; bottom:14px; left:50%; transform:translateX(-50%);
+    z-index:20; display:flex; align-items:center; gap:8px;
+    background:#fff; border:1px solid #e4e0da; border-radius:8px;
+    padding:6px 14px; font-size:11px; color:#666;
+    box-shadow:0 1px 3px rgba(0,0,0,0.05);
+  `;
+  wrap.innerHTML = `
+    <span>🐢</span>
+    <input type="range" id="speed-slider" min="0.2" max="4" step="0.1" value="1"
+      style="width:90px;accent-color:#2563eb;cursor:pointer;">
+    <span>🐇</span>
+    <span id="speed-label" style="font-weight:600;min-width:28px;text-align:center;">1×</span>
+  `;
+  document.getElementById('app').appendChild(wrap);
+  document.getElementById('speed-slider').addEventListener('input', e => {
+    speedMultiplier = parseFloat(e.target.value);
+    document.getElementById('speed-label').textContent = speedMultiplier.toFixed(1) + '×';
+  });
+
+  // Tombol heatmap
+  const toolbar = document.getElementById('toolbar');
+  const sep     = document.createElement('div');
+  sep.className = 'tb-sep';
+  toolbar.appendChild(sep);
+  const btn = document.createElement('button');
+  btn.className   = 'btn btn-flat';
+  btn.id          = 'btn-heat';
+  btn.textContent = '🌡 Heatmap';
+  btn.addEventListener('click', () => {
+    showHeatmap           = !showHeatmap;
+    btn.style.background  = showHeatmap ? '#fef3c7' : '';
+    btn.style.borderColor = showHeatmap ? '#fbbf24' : '';
+  });
+  toolbar.appendChild(btn);
+});
+
+
+// =====================================================================
+// PATCH drawMap: tambahkan drawTrafficHeatmap + drawMinimap setelah render
