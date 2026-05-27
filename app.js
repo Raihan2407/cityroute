@@ -147,7 +147,7 @@ function getColors() {
 
 // Normalisasi vektor 3D
 // ═══════════════════════════════════════════════════════════════════
-// KONTRIBUSI RAIHAN DARMA — Transformasi 3D (MVP Matrix & Orbit Camera)
+// KONTRIBUSI RAIHAN DARMA Putra — Transformasi 3D (MVP Matrix & Orbit Camera)
 //
 // Bagian ini mengimplementasikan seluruh pipeline transformasi 3D:
 //   World Space → View Space → Clip Space → NDC → Screen Space
