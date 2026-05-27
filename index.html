@@ -4,28 +4,74 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CityRoute — Peta Spasial Kota Virtual</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div id="app">
+
       <!-- TOOLBAR -->
       <div id="toolbar">
+
+        <!-- LOGO: pin lokasi modern dengan dot A* -->
         <div class="tb-brand">
-          <div class="tb-mark">🗺</div>
-          <span class="tb-name">CityRoute</span>
+          <div class="tb-logo">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Kota: 3 gedung -->
+              <rect x="1" y="10" width="4" height="8" rx="0.8" fill="rgba(255,255,255,0.25)"/>
+              <rect x="2" y="7"  width="2" height="3" rx="0.5" fill="rgba(255,255,255,0.35)"/>
+              <rect x="6" y="6"  width="5" height="12" rx="0.8" fill="rgba(255,255,255,0.30)"/>
+              <rect x="7.5" y="3.5" width="2" height="3" rx="0.5" fill="rgba(255,255,255,0.40)"/>
+              <rect x="12" y="9" width="4" height="9"  rx="0.8" fill="rgba(255,255,255,0.22)"/>
+              <rect x="13" y="6" width="2" height="4"  rx="0.5" fill="rgba(255,255,255,0.30)"/>
+              <!-- Jalan -->
+              <rect x="0" y="18" width="20" height="2" rx="0" fill="rgba(255,255,255,0.15)"/>
+              <!-- Node jalur: titik A* -->
+              <circle cx="3"  cy="14" r="1"   fill="#02C39A" opacity="0.9"/>
+              <circle cx="8.5" cy="10" r="1.2" fill="#02C39A"/>
+              <circle cx="14" cy="13" r="1"   fill="#02C39A" opacity="0.9"/>
+              <!-- Garis A* -->
+              <polyline points="3,14 8.5,10 14,13" stroke="#02C39A" stroke-width="1" stroke-dasharray="1.5,1" opacity="0.8"/>
+            </svg>
+          </div>
+          <div class="tb-brand-text">
+            <span class="tb-name">CityRoute</span>
+            <span class="tb-sub">Peta Spasial</span>
+          </div>
         </div>
+
         <div class="tb-sep"></div>
+
+        <!-- MAP CONTROLS -->
         <div class="tb-grp">
-          <button class="btn btn-dark" id="btn-rand">🔀 Acak Peta</button>
-          <button class="btn btn-flat" id="btn-pos">📍 Acak Posisi</button>
+          <button class="btn btn-primary" id="btn-rand">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
+            Acak Peta
+          </button>
+          <button class="btn btn-ghost" id="btn-pos">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+            Acak Posisi
+          </button>
         </div>
+
         <div class="tb-sep"></div>
+
+        <!-- ZOOM -->
         <div class="tb-grp tb-zoom">
-          <button class="btn btn-icon" id="btn-zo">−</button>
-          <span id="zoom-label">50%</span>
-          <button class="btn btn-icon" id="btn-zi">+</button>
+          <button class="btn btn-icon" id="btn-zo" title="Zoom Out">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+          </button>
+          <span id="zoom-label">18%</span>
+          <button class="btn btn-icon" id="btn-zi" title="Zoom In">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+          </button>
         </div>
+
         <div class="tb-sep"></div>
+
+        <!-- VEHICLE + TRACK -->
         <div class="tb-grp">
           <div class="sel-wrap">
             <select id="obj-select">
@@ -35,15 +81,26 @@
               <option value="ped">🚶 Pejalan Kaki</option>
             </select>
           </div>
-          <button class="btn btn-green" id="btn-start">▶ Start</button>
-          <button class="btn btn-orange" id="btn-pause" style="display: none">
-            ⏸ Pause
+          <button class="btn btn-success" id="btn-start">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+            Start
+          </button>
+          <button class="btn btn-warning" id="btn-pause" style="display:none">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+            Pause
           </button>
         </div>
+
         <div class="tb-sep"></div>
+
+        <!-- 3D -->
         <div class="tb-grp">
-          <button class="btn btn-3d" id="btn-3d">🧊 Mode 3D</button>
+          <button class="btn btn-3d" id="btn-3d">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            Mode 3D
+          </button>
         </div>
+
       </div>
 
       <!-- CANVAS -->
@@ -56,59 +113,34 @@
       </div>
 
       <!-- INFO BAR -->
-      <div id="info">Drag untuk geser &nbsp;·&nbsp; Scroll untuk zoom</div>
-      <div id="info3d" style="display: none">
-        Drag = Orbit &nbsp;·&nbsp; Alt+Drag = Pan &nbsp;·&nbsp; Scroll = Zoom
+      <div id="info">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;opacity:.45"><rect x="5" y="9" width="14" height="6" rx="1"/><path d="M9 9V7a3 3 0 016 0v2"/></svg>
+        <span>Drag geser</span>
+        <span style="opacity:.35">·</span>
+        <span>Scroll zoom</span>
+        <span style="opacity:.35">·</span>
+        <span class="info-kbd">R</span><span style="font-size:10px">acak</span>
+        <span class="info-kbd">Space</span><span style="font-size:10px">start</span>
+      </div>
+      <div id="info3d" style="display:none">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;opacity:.45"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/></svg>
+        <span>Drag orbit</span>
+        <span style="opacity:.35">·</span>
+        <span class="info-kbd">Alt</span><span style="font-size:10px">+drag pan</span>
+        <span style="opacity:.35">·</span>
+        <span>Scroll zoom</span>
       </div>
 
       <!-- LEGEND -->
       <div id="legend">
         <div class="panel-title">Keterangan</div>
-        <div class="leg-row">
-          <div class="leg-dot" style="background: #16a34a"></div>
-          <span>Titik Awal</span>
-        </div>
-        <div class="leg-row">
-          <div class="leg-dot" style="background: #dc2626"></div>
-          <span>Titik Tujuan</span>
-        </div>
-        <div class="leg-row">
-          <div class="leg-line" style="background: #2563eb"></div>
-          <span>Jalur A*</span>
-        </div>
-        <div class="leg-row">
-          <div class="leg-dot" style="background: #2563eb"></div>
-          <span>Kendaraan</span>
-        </div>
-        <div class="leg-row">
-          <div
-            class="leg-dot"
-            style="
-              background: #dce8d4;
-              border: 1px solid #c4d8b8;
-              border-radius: 2px;
-            "
-          ></div>
-          <span>Taman</span>
-        </div>
-        <div class="leg-row">
-          <div
-            class="leg-dot"
-            style="
-              background: #d4e8f4;
-              border: 1px solid #bcd8ec;
-              border-radius: 2px;
-            "
-          ></div>
-          <span>Perairan</span>
-        </div>
-        <div class="leg-row">
-          <div
-            class="leg-dot"
-            style="background: #fff; border: 1.5px solid #c4c0b8"
-          ></div>
-          <span>Bundaran</span>
-        </div>
+        <div class="leg-row"><span class="leg-dot" style="background:#16a34a"></span><span>Titik Awal</span></div>
+        <div class="leg-row"><span class="leg-dot" style="background:#dc2626"></span><span>Titik Tujuan</span></div>
+        <div class="leg-row"><span class="leg-line" style="background:#2563eb"></span><span>Jalur A*</span></div>
+        <div class="leg-row"><span class="leg-dot" style="background:#2563eb"></span><span>Kendaraan</span></div>
+        <div class="leg-row"><span class="leg-dot" style="background:#dce8d4;border:1px solid #c4d8b8;border-radius:2px"></span><span>Taman</span></div>
+        <div class="leg-row"><span class="leg-dot" style="background:#d4e8f4;border:1px solid #bcd8ec;border-radius:2px"></span><span>Perairan</span></div>
+        <div class="leg-row"><span class="leg-dot" style="background:#fff;border:1.5px solid #c4c0b8"></span><span>Bundaran</span></div>
       </div>
 
       <!-- ALGO BADGE -->
@@ -116,15 +148,21 @@
         <div class="panel-title">Algoritma Grafika</div>
         <div class="algo-tags">
           <span class="tag">Bresenham Line</span>
-          <span class="tag">A* Pathfinding</span>
-          <span class="tag">Bezier Curve</span>
           <span class="tag">Midpoint Circle</span>
+          <span class="tag">Bezier Curve</span>
           <span class="tag">Dashed Curve</span>
+          <span class="tag">A* Pathfinding</span>
+          <span class="tag">Smoothstep Easing</span>
+          <span class="tag">Diagonal Edge</span>
+          <span class="tag">Scaling Transform</span>
+          <span class="tag">HSL Color Map</span>
           <span class="tag tag-3d">MVP Matrix 3D</span>
           <span class="tag tag-3d">Orbit Camera</span>
           <span class="tag tag-3d">Painter's Algo</span>
+          <span class="tag tag-3d">Ekstrusi 3D</span>
         </div>
       </div>
+
     </div>
     <script src="app.js"></script>
   </body>
