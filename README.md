@@ -36,35 +36,6 @@
 
 ---
 
-## 🧮 Algoritma Grafika yang Diimplementasikan
-
-Seluruh algoritma ditulis **dari nol tanpa library grafika** (tidak menggunakan Three.js, WebGL, atau library pathfinding).
-
-### Algoritma 2D
-| Algoritma | Fungsi | Kontributor |
-|-----------|--------|-------------|
-| **Bresenham Line** | `bresenhamLine()` | Alman |
-| **Midpoint Circle** | `midpointCircle()`, `midpointCircleCtx()` | Alman |
-| **Bezier Curve Kuadratik** | `getEdgeCP()`, `buildPathPts()` | Neza |
-| **Dashed Curve** | `dashedCurve()` | Neza |
-| **A\* Pathfinding** | `heuristic()`, `computePath()` | Raihan |
-| **Scaling Transform 2D** | `worldToMinimap()`, `drawMinimap()` | Alman |
-| **Smoothstep Easing** | `smoothstep()`, `lerpPoint()` | Neza |
-| **Diagonal Edge** | `addDiagonalEdges()` | Elsa |
-| **PRNG LCG** | `makeRng()` | Elsa |
-| **HSL Color Mapping** | `lerpColor()`, `drawTrafficHeatmap()` | Amaa |
-
-### Algoritma 3D
-| Algoritma | Fungsi | Kontributor |
-|-----------|--------|-------------|
-| **MVP Matrix** | `mat4lookAt()`, `mat4perspective()`, `project3D()` | Raihan |
-| **Orbit Camera** | `updateCamera3D()` | Raihan |
-| **Ekstrusi 3D + Back-face Culling** | `extrudeBuilding3D()` | Amaa |
-| **Painter's Algorithm** | Sort by depth `.w` | Amaa |
-| **Viewport Transform** | `clampCam()`, `setZoom()` | Amaa |
-
----
-
 ## 🚀 Cara Menjalankan
 
 ### Online
