@@ -36,6 +36,35 @@
 
 ---
 
+## 🧮 Algoritma Grafika yang Diimplementasikan
+
+Seluruh algoritma ditulis **dari nol tanpa library grafika** (tidak menggunakan Three.js, WebGL, atau library pathfinding).
+
+### Algoritma 2D
+| Algoritma | Fungsi | Kontributor |
+|-----------|--------|-------------|
+| **Bresenham Line** | `bresenhamLine()` | Alman |
+| **Midpoint Circle** | `midpointCircle()`, `midpointCircleCtx()` | Alman |
+| **Bezier Curve Kuadratik** | `getEdgeCP()`, `buildPathPts()` | Neza |
+| **Dashed Curve** | `dashedCurve()` | Neza |
+| **A\* Pathfinding** | `heuristic()`, `computePath()` | Raihan |
+| **Scaling Transform 2D** | `worldToMinimap()`, `drawMinimap()` | Alman |
+| **Smoothstep Easing** | `smoothstep()`, `lerpPoint()` | Neza |
+| **Diagonal Edge** | `addDiagonalEdges()` | Elsa |
+| **PRNG LCG** | `makeRng()` | Elsa |
+| **HSL Color Mapping** | `lerpColor()`, `drawTrafficHeatmap()` | Amaa |
+
+### Algoritma 3D
+| Algoritma | Fungsi | Kontributor |
+|-----------|--------|-------------|
+| **MVP Matrix** | `mat4lookAt()`, `mat4perspective()`, `project3D()` | Raihan |
+| **Orbit Camera** | `updateCamera3D()` | Raihan |
+| **Ekstrusi 3D + Back-face Culling** | `extrudeBuilding3D()` | Amaa |
+| **Painter's Algorithm** | Sort by depth `.w` | Amaa |
+| **Viewport Transform** | `clampCam()`, `setZoom()` | Amaa |
+
+---
+
 ## 🚀 Cara Menjalankan
 
 ### Online
@@ -87,15 +116,37 @@ open index.html
 
 ---
 
+## 📁 Struktur Project
+
+```
+cityroute/
+├── index.html      # Struktur UI & toolbar
+├── style.css       # Styling premium (glassmorphism, CSS variables)
+└── app.js          # Seluruh logika grafika (~2700 baris)
+    ├── [1-130]     Konstanta, state, warna
+    ├── [131-280]   **Transformasi 3D — mat4lookAt, mat4perspective, project3D, updateCamera3D (Raihan)**
+    ├── [281-460]   Rendering 3D — ekstrusi, painter's (Amaa)
+    ├── [461-700]   drawMap3D — sky, ground, bangunan
+    ├── [701-870]   Algoritma dasar — Bresenham, Midpoint (Alman)
+    ├── [871-1130]  Map generation, bundaran, city blocks (Elsa)
+    ├── [1131-1260] **A* Pathfinding — heuristic, computePath (Raihan)**
+    ├── [1261-1460] Bezier, dashed curve, buildPathPts (Neza)
+    ├── [1461-1710] drawMap 2D — layer rendering
+    ├── [1711-1870] Kendaraan, bendera, trotoar (Amaa)
+    ├── [1871-2200] Event listeners, UI, keyboard shortcuts
+    ├── [2200-2500] Minimap, smoothstep, diagonal, heatmap
+    └── [2500-2700] Loop & init
+```
+
+---
+
 ## 👥 Tim Pengembang
 
-| Nama | NIM | Kontribusi |
-|------|-----|------------|
-| **Raihan Darma Putra** | 2401020138 | A* Pathfinding · MVP Matrix 3D · Orbit Camera · Integrasi Final |
-| Alman | — | Bresenham Line · Midpoint Circle · Minimap |
-| Neza | — | Bezier Curve · buildPathPts · Speed Control |
-| Elsa | — | Map Generation · PRNG · Diagonal Edge |
-| Amaa | — | Animasi Kendaraan · Ekstrusi 3D · Heatmap |
+- **Raihan Darma Putra** (2401020138)
+- Alman
+- Neza
+- Elsa
+- Amaa
 
 ---
 
