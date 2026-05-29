@@ -12,10 +12,10 @@
 
 ## 📸 Preview
 
-![CityRoute 2D](https://raw.githubusercontent.com/Raihan2407/cityroute/main/preview_2d.png)
+![CityRoute 2D](https://raw.githubusercontent.com/Raihan2407/cityroute/main/2D.png)
 > *Tampilan 2D — Peta spasial dengan jalur A\* dan animasi kendaraan*
 
-![CityRoute 3D](https://raw.githubusercontent.com/Raihan2407/cityroute/main/preview_3d.png)
+![CityRoute 3D](https://raw.githubusercontent.com/Raihan2407/cityroute/main/3D.png)
 > *Tampilan 3D — Ekstrusi bangunan dengan Painter's Algorithm dan sky gradient*
 
 ---
