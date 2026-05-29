@@ -87,30 +87,6 @@ open index.html
 
 ---
 
-## 📁 Struktur Project
-
-```
-cityroute/
-├── index.html      # Struktur UI & toolbar
-├── style.css       # Styling premium (glassmorphism, CSS variables)
-└── app.js          # Seluruh logika grafika (~2700 baris)
-    ├── [1-130]     Konstanta, state, warna
-    ├── [131-280]   Transformasi 3D (Raihan)
-    ├── [281-460]   Rendering 3D — ekstrusi, painter's (Amaa)
-    ├── [461-700]   drawMap3D — sky, ground, bangunan
-    ├── [701-870]   Algoritma dasar — Bresenham, Midpoint (Alman)
-    ├── [871-1130]  Map generation, bundaran, city blocks (Elsa)
-    ├── [1131-1260] A* Pathfinding (Raihan)
-    ├── [1261-1460] Bezier, dashed curve, buildPathPts (Neza)
-    ├── [1461-1710] drawMap 2D — layer rendering
-    ├── [1711-1870] Kendaraan, bendera, trotoar (Amaa)
-    ├── [1871-2200] Event listeners, UI, keyboard shortcuts
-    ├── [2200-2500] Minimap, smoothstep, diagonal, heatmap
-    └── [2500-2700] Loop & init
-```
-
----
-
 ## 👥 Tim Pengembang
 
 | Nama | NIM | Kontribusi |
